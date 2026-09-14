@@ -25,6 +25,8 @@ from elai_confidence_core.estimators import BaselineSarRegression
 
 class DemoFittedEstimator(BaselineSarRegression):
     version = "1.0.0-demo_fitted"
+    #: Why the real fitted table was not used. Empty when chosen deliberately.
+    fallback_reason = ""
 
     COEFFICIENTS = {
         # crop:stage -> (slope, intercept, measured_rmse)
@@ -138,6 +140,15 @@ def active_estimator():
     if coef.exists():
         try:
             return FittedFromData()
-        except Exception:  # noqa: BLE001 — never let a bad file break startup
-            pass
-    return DemoFittedEstimator()
+        except Exception as exc:  # noqa: BLE001 — startup must not break
+            # Previously this swallowed the error and quietly served the
+            # FABRICATED table instead. The service looked healthy while every
+            # number came from invented coefficients, and there was no way to
+            # tell from outside. Falling back is still right; doing it silently
+            # is not. The reason now surfaces on /healthz.
+            est = DemoFittedEstimator()
+            est.fallback_reason = f"{type(exc).__name__}: {exc}"
+            return est
+    est = DemoFittedEstimator()
+    est.fallback_reason = f"no coefficients.json at {coef}"
+    return est

@@ -82,6 +82,8 @@ def healthz() -> dict:
         "data_source": getattr(repo, "data_source", "unknown"),
         "estimator_version": getattr(est, "version", "unknown"),
         "validated_models": sorted(getattr(est, "VALIDATED", [])),
+        "estimator_fallback_reason": getattr(est, "fallback_reason", "") or None,
+        "estimator_mode_env": os.getenv("ELAI_ESTIMATOR", "auto"),
     }
 
 
