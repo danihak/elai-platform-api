@@ -24,6 +24,7 @@ OBS_FILE = DATA / "observations.json"
 COEF_FILE = DATA / "coefficients.json"
 HIST_FILE = DATA / "history.json"
 TRAIN_FILE = DATA / "training.json"
+CLIM_FILE = DATA / "climatology.json"
 
 
 def _load_env() -> None:
@@ -179,6 +180,79 @@ def cmd_fit() -> int:
             print(f"  {combo:26} NOT FITTED — {r['reason']}")
 
     table = to_estimator_table(results)
+
+    # ---- phenology climatology and persistence decay, both from real reads ----
+    from .ingest.climatology import fit_climatology, fit_persistence_decay
+    from .services.fusion import validate_fusion
+
+    clear_reads, series_by_field = [], {}
+    for src in (OBS_FILE, HIST_FILE):
+        if not src.exists():
+            continue
+        blob = json.loads(src.read_text(encoding="utf-8"))
+        for farm_id, rows in blob.get("farms", {}).items():
+            farm = FARMS_BY_ID.get(farm_id)
+            if not farm:
+                continue
+            for r in rows:
+                if r.get("ndvi") is None or r.get("valid_pixel_fraction", 0) < 0.8:
+                    continue
+                clear_reads.append({"crop": farm.crop, "date": r["date"], "ndvi": r["ndvi"]})
+                series_by_field.setdefault((farm.crop, farm_id), []).append(
+                    (date.fromisoformat(r["date"]), r["ndvi"]))
+    if TRAIN_FILE.exists():
+        blob = json.loads(TRAIN_FILE.read_text(encoding="utf-8"))
+        for aoi_id, block in blob["aois"].items():
+            for r in block["observations"]:
+                clear_reads.append({"crop": block["crop"], "date": r["date"], "ndvi": r["ndvi"]})
+                series_by_field.setdefault((block["crop"], aoi_id), []).append(
+                    (date.fromisoformat(r["date"]), r["ndvi"]))
+
+    print()
+    print(f"phenology climatology from {len(clear_reads)} clear optical reads")
+    clim = fit_climatology(clear_reads)
+    for crop, m in clim.items():
+        if m.get("fitted"):
+            print(f"  {crop:8} n={m['n']:4}  residual sigma={m['residual_sigma']:.4f}  "
+                  f"seasonal variance explained={m['variance_explained']:.1%}")
+        else:
+            print(f"  {crop:8} NOT FITTED — {m['reason']}")
+
+    print()
+    print("persistence decay, measured from clear-read pairs")
+    decay = fit_persistence_decay(series_by_field)
+    for crop, d in decay.items():
+        if d.get("fitted"):
+            print(f"  {crop:8} n={d['n']:5} pairs  decay={d['decay_per_day']:.5f} NDVI per day")
+        else:
+            print(f"  {crop:8} NOT FITTED — {d['reason']}")
+
+    # ---- calibrate the fusion against held-out clear reads ----
+    radar_sigma = {}
+    for combo, m in table["models"].items():
+        crop = combo.split(":")[0]
+        if combo in table["validated"] or crop not in radar_sigma:
+            radar_sigma.setdefault(crop, m["rmse"])
+
+    truth = _fusion_truth_points(series_by_field, radar_sigma)
+    print()
+    print(f"fusion calibration on {len(truth)} held-out clear reads")
+    calib = validate_fusion(
+        truth, radar_sigma, clim,
+        {c: d.get("decay_per_day", 0.015) for c, d in decay.items()},
+    )
+    for crop, c in calib.items():
+        if c.get("validated"):
+            print(f"  {crop:8} real rmse={c['rmse']:.4f}  claimed={c['mean_claimed_sigma']:.4f}  "
+                  f"calibration={c['calibration']:.2f}")
+            print(f"  {'':8} {c['verdict']}")
+        else:
+            print(f"  {crop:8} NOT VALIDATED — {c['reason']}")
+
+    CLIM_FILE.write_text(json.dumps(
+        {"climatology": clim, "persistence_decay": decay, "fusion_calibration": calib},
+        indent=1), encoding="utf-8")
+    print(f"\nwrote {CLIM_FILE}")
     COEF_FILE.write_text(json.dumps({"results": results, "estimator": table}, indent=1),
                          encoding="utf-8")
     print(f"\nvalidated: {table['validated'] or 'none'}")
@@ -247,6 +321,39 @@ def cmd_train_pull(days: int = 730) -> int:
     print(f"\nwrote {TRAIN_FILE} — {total_pairs} clear-day radar/optical pairs")
     print("next: python -m app.cli fit")
     return 0
+
+
+def _fusion_truth_points(series_by_field, radar_sigma):
+    """Held-out points for calibrating the fusion.
+
+    Each clear optical read becomes a test case: hide it, rebuild the estimate
+    from what was known beforehand, compare. The radar value is simulated from
+    the measured radar RMSE rather than re-fetched, because what is being tested
+    here is the FUSION, not the radar model — that already has its own hold-out
+    score.
+    """
+    import random
+    rng = random.Random(4471)
+    out = []
+    for (crop, field_id), pts in series_by_field.items():
+        sigma = radar_sigma.get(crop)
+        if sigma is None:
+            continue
+        pts = sorted(pts)
+        for i in range(1, len(pts)):
+            gap = (pts[i][0] - pts[i - 1][0]).days
+            if gap <= 0 or gap > 60:
+                continue
+            truth = pts[i][1]
+            out.append({
+                "crop": crop,
+                "obs_date": pts[i][0],
+                "ndvi": truth,
+                "radar_ndvi": truth + rng.gauss(0, sigma),
+                "last_clear_ndvi": pts[i - 1][1],
+                "days_since_clear": gap,
+            })
+    return out
 
 
 def _collect(bundle: dict, pairs: list) -> None:

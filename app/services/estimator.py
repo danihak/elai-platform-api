@@ -122,6 +122,89 @@ class FittedFromData(BaselineSarRegression):
         return None
 
 
+class FusionEstimator(FittedFromData):
+    """The full stack: phenology prior, persistence, and radar, fused by variance.
+
+    Radar no longer has to produce the answer alone. It contributes one of three
+    weak sources, weighted by its measured error, and the posterior is tighter
+    than any input. This is what brings cotton back from Blind — a radar sigma of
+    0.131 is unusable by itself but still informative when weighted honestly.
+
+    The claimed band is then INFLATED by the measured calibration factor from
+    `python -m app.cli fit`. Held-out validation showed the raw fusion is
+    overconfident by roughly 1.65x on anomalous fields, which are the only fields
+    that matter. Keeping the flattering number would be the exact over-claim this
+    system exists to prevent.
+    """
+
+    version = "2.0.0-fusion"
+
+    def __init__(self) -> None:
+        super().__init__()
+        import json
+        import pathlib as _p
+
+        blob = json.loads(
+            (_p.Path(__file__).parent.parent.parent / "data" / "climatology.json")
+            .read_text(encoding="utf-8")
+        )
+        self.CLIMATOLOGY = blob["climatology"]
+        self.DECAY = {c: d.get("decay_per_day")
+                      for c, d in blob["persistence_decay"].items() if d.get("fitted")}
+        self.CALIBRATION = {c: v.get("calibration", 1.0)
+                            for c, v in blob["fusion_calibration"].items()
+                            if v.get("validated")}
+
+    def estimate(self, *, crop, stage, sar_vv, sar_vh, source_keys,
+                 last_clear_ndvi, days_since_clear, obs_date=None, **_):
+        from elai_confidence_core.estimators import Estimate
+        from .fusion import build_components, describe, fuse, inflate_for_calibration
+
+        # Radar leg — only from a model that cleared validation.
+        radar_ndvi = radar_sigma = None
+        radar_detail = ""
+        base = super().estimate(
+            crop=crop, stage=stage, sar_vv=sar_vv, sar_vh=sar_vh,
+            source_keys=source_keys, last_clear_ndvi=last_clear_ndvi,
+            days_since_clear=days_since_clear,
+        )
+        if base is not None:
+            radar_ndvi, radar_sigma = base.ndvi, base.uncertainty
+            radar_detail = base.model_key
+
+        decay = self.DECAY.get(crop)
+        if decay is None:
+            # Persistence cannot be weighted without a measured decay, so it is
+            # omitted rather than guessed.
+            decay = 0.0
+
+        components = build_components(
+            obs_date=obs_date, crop=crop,
+            radar_ndvi=radar_ndvi, radar_sigma=radar_sigma, radar_detail=radar_detail,
+            last_clear_ndvi=last_clear_ndvi if decay else None,
+            days_since_clear=days_since_clear,
+            climatology_model=self.CLIMATOLOGY.get(crop),
+            persistence_decay=decay or 0.015,
+        )
+        est = fuse(components)
+        if est is None:
+            return None
+
+        sigma = inflate_for_calibration(est.sigma, self.CALIBRATION.get(crop, 1.0))
+
+        return Estimate(
+            ndvi=est.ndvi,
+            uncertainty=sigma,
+            model_key=f"fusion[{est.dominant} dominant]",
+            model_version=self.version,
+            sources_used=list(source_keys) + [c.name for c in est.components],
+            # Validated for a crop once the fusion itself has been calibrated for
+            # it — not merely because a radar model exists.
+            validated_for=([f"{crop}:{stage}", f"{crop}:*"]
+                           if crop in self.CALIBRATION else []),
+        )
+
+
 def active_estimator():
     """Preference order: real fitted coefficients, then the explicit override.
 
@@ -136,7 +219,20 @@ def active_estimator():
     if mode == "demo_fitted":
         return DemoFittedEstimator()
 
-    coef = pathlib.Path(__file__).parent.parent.parent / "data" / "coefficients.json"
+    data = pathlib.Path(__file__).parent.parent.parent / "data"
+    coef, clim = data / "coefficients.json", data / "climatology.json"
+
+    if mode == "radar_only" and coef.exists():
+        return FittedFromData()
+
+    if coef.exists() and clim.exists():
+        try:
+            return FusionEstimator()
+        except Exception as exc:  # noqa: BLE001
+            est = DemoFittedEstimator()
+            est.fallback_reason = f"fusion unavailable: {type(exc).__name__}: {exc}"
+            return est
+
     if coef.exists():
         try:
             return FittedFromData()

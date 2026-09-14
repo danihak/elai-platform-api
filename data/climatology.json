@@ -1,0 +1,64 @@
+{
+ "climatology": {
+  "cotton": {
+   "fitted": true,
+   "n": 422,
+   "coefficients": [
+    0.465945,
+    0.06222,
+    -0.088194,
+    -0.097553,
+    0.057216
+   ],
+   "residual_sigma": 0.1123,
+   "variance_explained": 0.3859
+  },
+  "maize": {
+   "fitted": true,
+   "n": 276,
+   "coefficients": [
+    0.397477,
+    0.018999,
+    -0.093779,
+    -0.098603,
+    0.062201
+   ],
+   "residual_sigma": 0.1095,
+   "variance_explained": 0.3526
+  }
+ },
+ "persistence_decay": {
+  "cotton": {
+   "fitted": true,
+   "n": 3623,
+   "decay_per_day": 0.02628,
+   "max_gap_days": 60
+  },
+  "maize": {
+   "fitted": true,
+   "n": 1511,
+   "decay_per_day": 0.02011,
+   "max_gap_days": 60
+  }
+ },
+ "fusion_calibration": {
+  "cotton": {
+   "validated": true,
+   "n": 413,
+   "rmse": 0.0466,
+   "mean_claimed_sigma": 0.0534,
+   "calibration": 0.872,
+   "overconfident": false,
+   "verdict": "well calibrated"
+  },
+  "maize": {
+   "validated": true,
+   "n": 263,
+   "rmse": 0.0473,
+   "mean_claimed_sigma": 0.0458,
+   "calibration": 1.031,
+   "overconfident": false,
+   "verdict": "well calibrated"
+  }
+ }
+}
