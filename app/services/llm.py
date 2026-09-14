@@ -1,5 +1,5 @@
-"""
-llm.py — Claude tool-use, with the output verified before anyone sees it.
+﻿"""
+llm.py â€” Claude tool-use, with the output verified before anyone sees it.
 
 Three deliberate choices.
 
@@ -14,7 +14,7 @@ behind the evaluation answer: faithfulness is not a judgement call here, it is a
 set membership test on numeric tokens.
 
 **Failure is invisible to the user.** No API key, provider down, circuit open,
-groundedness failed — all four produce the deterministic evidence chain. The
+groundedness failed â€” all four produce the deterministic evidence chain. The
 explain endpoint has no error state. A live demo cannot die on stage.
 """
 
@@ -147,7 +147,7 @@ _NUMBER = re.compile(r"\d+(?:\.\d+)?")
 
 # A number immediately followed by a unit is a CLAIM ABOUT DATA and must be
 # grounded regardless of size. Without this, "yield is about 7 MT/ha" passed the
-# check purely because 7 is a small integer — the exact class of invented figure
+# check purely because 7 is a small integer â€” the exact class of invented figure
 # a lender would act on.
 _UNIT_BOUND = re.compile(
     r"(\d+(?:\.\d+)?)\s*(?:%|percent|mt/ha|mt |ha\b|hectare|tonnes?|kg|days?|weeks?|ndvi)",
@@ -183,7 +183,7 @@ def check_grounded(answer: str, evidence: List[Dict[str, Any]]) -> Tuple[bool, L
     """Every number in the answer must appear in what the tools returned.
 
     This is the automated half of the evaluation rubric. It does not judge whether
-    an explanation is *useful* — an agronomist panel does that — but it makes an
+    an explanation is *useful* â€” an agronomist panel does that â€” but it makes an
     invented figure impossible to ship, which is the failure that actually hurts
     a farmer or a lender.
     """
@@ -228,7 +228,7 @@ def available() -> bool:
 
 
 def explain_with_claude(farm_id: str, question: str, audience: str) -> LlmResult:
-    """Run the tool-use loop. Never raises — failure returns ok=False."""
+    """Run the tool-use loop. Never raises â€” failure returns ok=False."""
 
     key = os.getenv("ANTHROPIC_API_KEY")
     if not key:
@@ -267,7 +267,7 @@ def explain_with_claude(farm_id: str, question: str, audience: str) -> LlmResult
                 })
                 if resp.status_code != 200:
                     CIRCUIT.record_failure()
-                    return LlmResult(ok=False, failure_reason=f"http_{resp.status_code}", rounds=rnd)
+                    return LlmResult(ok=False, failure_reason=f"http_{resp.status_code}:{resp.text[:400]}", rounds=rnd)
 
                 data = resp.json()
                 blocks = data.get("content", [])
@@ -306,6 +306,8 @@ def explain_with_claude(farm_id: str, question: str, audience: str) -> LlmResult
         return LlmResult(ok=False, failure_reason="max_rounds", tool_calls=tool_calls,
                          evidence=evidence, rounds=MAX_TOOL_ROUNDS)
 
-    except Exception as exc:  # noqa: BLE001 — the endpoint must never raise
+    except Exception as exc:  # noqa: BLE001 â€” the endpoint must never raise
         CIRCUIT.record_failure()
         return LlmResult(ok=False, failure_reason=f"exception:{type(exc).__name__}")
+
+
