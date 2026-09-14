@@ -62,8 +62,75 @@ class Repository:
     # ------------------------------------------------------------------ setup
 
     def _load(self) -> None:
+        """Real Sentinel observations when they have been ingested; synthetic otherwise.
+
+        `python -m app.cli ingest` writes data/observations.json. Once it exists,
+        every number the platform serves traces to an actual satellite pass over
+        an actual polygon. Without it the service still runs on the synthetic
+        seed, and `data_source` says so on every response.
+        """
+        import json
+        import pathlib
+
+        real = pathlib.Path(__file__).parent.parent.parent / "data" / "observations.json"
+        if real.exists():
+            try:
+                self._load_real(json.loads(real.read_text(encoding="utf-8")))
+                self.data_source = "sentinel-hub"
+                return
+            except Exception:  # noqa: BLE001 — never let a bad file break startup
+                pass
+
         for farm in FARMS:
             self._observations[farm.farm_id] = observations_for(farm, AS_OF)
+        self.data_source = "synthetic"
+
+    def _load_real(self, bundle: dict) -> None:
+        """Rebuild Observations from the ingested rows.
+
+        The cached file holds one row per interval. The confidence engine also
+        needs the gap BEFORE each reading, so that is recomputed here by walking
+        the series in date order — the same quantity the engine uses to decide
+        when interpolation has gone stale.
+        """
+        from datetime import date as _date
+
+        for farm in FARMS:
+            rows = bundle.get("farms", {}).get(farm.farm_id, [])
+            series: List[Observation] = []
+            last_date = last_das = last_ndvi = None
+
+            for r in sorted(rows, key=lambda x: x["date"]):
+                d = _date.fromisoformat(r["date"])
+                das = r.get("das", (d - farm.sowing_date).days)
+                gap = 999 if last_date is None else (d - last_date).days
+
+                series.append(Observation(
+                    farm_id=farm.farm_id,
+                    obs_date=d,
+                    das=das,
+                    crop=farm.crop,
+                    stage=r.get("stage", "unknown"),
+                    valid_pixel_fraction=r.get("valid_pixel_fraction", 0.0),
+                    mean_cloud_probability=r.get("mean_cloud_probability", 1.0),
+                    cloudy=r.get("cloudy", True),
+                    ndvi=r.get("ndvi"),
+                    ndwi=r.get("ndwi"),
+                    gci=r.get("gci"),
+                    sar_available=r.get("sar_vh") is not None,
+                    sar_vv=r.get("sar_vv"),
+                    sar_vh=r.get("sar_vh"),
+                    radar_sources=tuple(r.get("radar_sources") or ()),
+                    days_since_last_clear_optical=gap,
+                    last_clear_optical_date=last_date,
+                    last_clear_optical_das=last_das,
+                    last_clear_optical_ndvi=last_ndvi,
+                ))
+
+                if r.get("ndvi") is not None and r.get("valid_pixel_fraction", 0) >= 0.5:
+                    last_date, last_das, last_ndvi = d, das, r["ndvi"]
+
+            self._observations[farm.farm_id] = series
 
     # ------------------------------------------------------------------ farms
 

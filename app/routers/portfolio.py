@@ -63,6 +63,7 @@ def portfolio(crop: Optional[str] = None, district: Optional[str] = None,
         })
 
     return {
+        "data_source": getattr(repo, "data_source", "unknown"),
         "farm_count": len(rows),
         "total_area_ha": round(total_area, 2),
         "confidence_mix_by_area": {

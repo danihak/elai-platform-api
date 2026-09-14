@@ -71,10 +71,17 @@ def healthz() -> dict:
     process is running. A task serving the wrong rule version is worse than a
     task that is down.
     """
+    from .store.repository import repo
+    from .services.estimator import active_estimator
+
+    est = active_estimator()
     return {
         "status": "ok",
         "rule_version": CURRENT.version,
         "core_states": ["Verified", "Degraded", "Blind"],
+        "data_source": getattr(repo, "data_source", "unknown"),
+        "estimator_version": getattr(est, "version", "unknown"),
+        "validated_models": sorted(getattr(est, "VALIDATED", [])),
     }
 
 

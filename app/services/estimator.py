@@ -88,20 +88,34 @@ class FittedFromData(BaselineSarRegression):
             model = self.MODELS.get(key)
             if not model:
                 continue
+
+            # A model that was fitted but did NOT clear the decision-grade
+            # ceiling is not usable. Returning it anyway and letting the engine
+            # judge invites exactly the accident found on the first real run:
+            # cotton was rejected at RMSE 0.1309, then a 15% multi-source
+            # "narrowing" I had invented brought it to 0.111 and slipped it
+            # under the 0.12 gate. A rejected model reached a client because of
+            # a factor nobody measured.
+            if key not in self.VALIDATED:
+                continue
+
             value = model["intercept"] + sum(
                 c * feats[f] for f, c in model["coefficients"].items()
             )
-            unc = model["rmse"]
-            if len(source_keys) > 1:
-                unc *= 0.85
+
+            # The uncertainty is the measured held-out RMSE, used as measured.
+            # No narrowing for extra radar sources: that band came from a
+            # hold-out set, and shrinking it with an unmeasured heuristic is
+            # over-claiming of the precise kind this system exists to stop.
+            # If fusing sources genuinely narrows the error, fit the fused
+            # model and measure it.
             return Estimate(
                 ndvi=max(0.0, min(1.0, value)),
-                uncertainty=unc,
+                uncertainty=model["rmse"],
                 model_key=f"radar_multivariate[{key}]",
                 model_version=self.version,
                 sources_used=source_keys,
-                validated_for=[f"{crop}:{stage}"] if key in self.VALIDATED
-                              or f"{crop}:*" in self.VALIDATED else [],
+                validated_for=[f"{crop}:{stage}", f"{crop}:*"],
             )
         return None
 
