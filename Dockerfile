@@ -10,6 +10,7 @@ COPY requirements*.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
+COPY data ./data
 
 # Railway supplies $PORT. The health check verifies the core loaded and which
 # rule version is live, not just that the process is up.
