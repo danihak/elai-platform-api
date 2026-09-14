@@ -1,5 +1,5 @@
 -r requirements-base.txt
 
 # Railway installs the core from GitHub at build time. Replace the owner with
-# your account before deploying — push_to_github.sh does this automatically.
-elai-confidence-core @ git+https://github.com/danihak/elai-confidence-core@v0.1.1
+# your account before deploying ??? push_to_github.sh does this automatically.
+elai-confidence-core @ git+https://github.com/danihak/elai-confidence-core@v0.1.2
