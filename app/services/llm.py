@@ -1,5 +1,5 @@
-﻿"""
-llm.py â€” Claude tool-use, with the output verified before anyone sees it.
+"""
+llm.py — Claude tool-use, with the output verified before anyone sees it.
 
 Three deliberate choices.
 
@@ -14,7 +14,7 @@ behind the evaluation answer: faithfulness is not a judgement call here, it is a
 set membership test on numeric tokens.
 
 **Failure is invisible to the user.** No API key, provider down, circuit open,
-groundedness failed â€” all four produce the deterministic evidence chain. The
+groundedness failed — all four produce the deterministic evidence chain. The
 explain endpoint has no error state. A live demo cannot die on stage.
 """
 
@@ -33,7 +33,7 @@ from .tools import run_tool, tool_definitions
 
 API_URL = "https://api.anthropic.com/v1/messages"
 API_VERSION = "2023-06-01"
-DEFAULT_MODEL = os.getenv("ELAI_LLM_MODEL", "claude-sonnet-4-6")
+DEFAULT_MODEL = os.getenv("ELAI_LLM_MODEL", "claude-sonnet-5")
 MAX_TOOL_ROUNDS = 5
 TIMEOUT_S = float(os.getenv("ELAI_LLM_TIMEOUT", "25"))
 
@@ -147,7 +147,7 @@ _NUMBER = re.compile(r"\d+(?:\.\d+)?")
 
 # A number immediately followed by a unit is a CLAIM ABOUT DATA and must be
 # grounded regardless of size. Without this, "yield is about 7 MT/ha" passed the
-# check purely because 7 is a small integer â€” the exact class of invented figure
+# check purely because 7 is a small integer — the exact class of invented figure
 # a lender would act on.
 _UNIT_BOUND = re.compile(
     r"(\d+(?:\.\d+)?)\s*(?:%|percent|mt/ha|mt |ha\b|hectare|tonnes?|kg|days?|weeks?|ndvi)",
@@ -160,30 +160,38 @@ _ALLOWED_BARE = {"0", "1", "2", "3"}
 
 
 def _numeric_tokens(blob: Any) -> set:
+    """Every string form a tool value could legitimately be written as.
+
+    Float arithmetic means a tool returns 0.059500000000000004 where the honest
+    way to say it is "0.0595". The model rounding sensibly is correct behaviour,
+    so the allowed set has to contain the rounded forms too. Without this the
+    checker rejected accurate answers for being better formatted than the JSON.
+    """
     out = set()
     for m in _NUMBER.finditer(json.dumps(blob, default=str)):
         tok = m.group(0)
         out.add(tok)
-        if tok.endswith(".0"):
-            out.add(tok[:-2])
-        # A figure the tools gave as 0.62 may legitimately be spoken as 62%.
         try:
             val = float(tok)
-            if 0 < val < 1:
-                out.add(str(round(val * 100)))
-                out.add(f"{val * 100:.0f}")
-            out.add(f"{val:.0f}")
-            out.add(f"{val:.1f}")
         except ValueError:
-            pass
-    return out
+            continue
+        for dp in range(0, 5):
+            out.add(f"{val:.{dp}f}")
+            out.add(str(round(val, dp)))
+        # A fraction the tools gave as 0.19 may be spoken as 19%.
+        if 0 < val < 1:
+            pct = val * 100
+            for dp in range(0, 3):
+                out.add(f"{pct:.{dp}f}")
+                out.add(str(round(pct, dp)))
+    return {x[:-2] if x.endswith(".0") else x for x in out} | out
 
 
 def check_grounded(answer: str, evidence: List[Dict[str, Any]]) -> Tuple[bool, List[str]]:
     """Every number in the answer must appear in what the tools returned.
 
     This is the automated half of the evaluation rubric. It does not judge whether
-    an explanation is *useful* â€” an agronomist panel does that â€” but it makes an
+    an explanation is *useful* — an agronomist panel does that — but it makes an
     invented figure impossible to ship, which is the failure that actually hurts
     a farmer or a lender.
     """
@@ -199,6 +207,12 @@ def check_grounded(answer: str, evidence: List[Dict[str, Any]]) -> Tuple[bool, L
 
     for m in _NUMBER.finditer(answer):
         tok = m.group(0)
+        # Digits inside an identifier (TS-MZ-0044, rule 2026.09.14-a) are not
+        # claims about data. Skip anything touching a letter, hyphen or slash.
+        before = answer[m.start() - 1] if m.start() > 0 else " "
+        after = answer[m.end()] if m.end() < len(answer) else " "
+        if before.isalpha() or before in "-_/" or after.isalpha() or after in "-_/":
+            continue
         if tok in unit_bound or tok in allowed:
             continue
         ungrounded.append(tok)
@@ -228,7 +242,7 @@ def available() -> bool:
 
 
 def explain_with_claude(farm_id: str, question: str, audience: str) -> LlmResult:
-    """Run the tool-use loop. Never raises â€” failure returns ok=False."""
+    """Run the tool-use loop. Never raises — failure returns ok=False."""
 
     key = os.getenv("ANTHROPIC_API_KEY")
     if not key:
@@ -267,7 +281,20 @@ def explain_with_claude(farm_id: str, question: str, audience: str) -> LlmResult
                 })
                 if resp.status_code != 200:
                     CIRCUIT.record_failure()
-                    return LlmResult(ok=False, failure_reason=f"http_{resp.status_code}:{resp.text[:400]}", rounds=rnd)
+                    # Surface what the provider actually said. A bare status code
+                    # costs a round trip every time — the difference between
+                    # "wrong model name" and "bad tool schema" is in this body.
+                    detail = ""
+                    try:
+                        err = resp.json().get("error", {})
+                        detail = f": {err.get('type', '')} {err.get('message', '')}".strip()
+                    except Exception:  # noqa: BLE001
+                        detail = f": {resp.text[:300]}"
+                    return LlmResult(
+                        ok=False,
+                        failure_reason=f"http_{resp.status_code}{detail}"[:500],
+                        rounds=rnd,
+                    )
 
                 data = resp.json()
                 blocks = data.get("content", [])
@@ -306,8 +333,6 @@ def explain_with_claude(farm_id: str, question: str, audience: str) -> LlmResult
         return LlmResult(ok=False, failure_reason="max_rounds", tool_calls=tool_calls,
                          evidence=evidence, rounds=MAX_TOOL_ROUNDS)
 
-    except Exception as exc:  # noqa: BLE001 â€” the endpoint must never raise
+    except Exception as exc:  # noqa: BLE001 — the endpoint must never raise
         CIRCUIT.record_failure()
         return LlmResult(ok=False, failure_reason=f"exception:{type(exc).__name__}")
-
-

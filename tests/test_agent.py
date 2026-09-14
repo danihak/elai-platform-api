@@ -143,3 +143,24 @@ def test_groundedness_is_deliberately_strict_about_rounding():
     assert not ok
     ok, _ = check_grounded("It has been 13 days.", ev)
     assert ok
+
+
+def test_groundedness_accepts_sensible_rounding_of_float_artifacts():
+    """Regression from the first live Claude run.
+
+    Tools return 0.059500000000000004 because of float arithmetic. The model
+    writes "0.0595", which is the honest way to say it — and the checker rejected
+    it for being better formatted than the JSON. Every real answer was being
+    thrown away.
+    """
+    ev = [{"tool": "get_latest_observation",
+           "result": {"ndvi_error_band": 0.07 * 0.85, "ndvi": 0.716}}]
+    ok, bad = check_grounded("NDVI 0.716, band 0.0595.", ev)
+    assert ok, f"rejected a correctly rounded figure: {bad}"
+
+
+def test_groundedness_ignores_digits_inside_identifiers():
+    """TS-MZ-0044 is a farm id, not a claim about data."""
+    ev = [{"tool": "get_farm_context", "result": {"farm_id": "TS-MZ-0044"}}]
+    ok, bad = check_grounded("Farm TS-MZ-0044 was reviewed.", ev)
+    assert ok, f"flagged identifier digits: {bad}"
