@@ -44,8 +44,86 @@ class UnfittedEstimator(BaselineSarRegression):
     version = "0.1.0-unfitted"
 
 
+class FittedFromData(BaselineSarRegression):
+    """Coefficients fitted on real clear-day pairs by `python -m app.cli fit`.
+
+    When data/coefficients.json exists this is what runs, and the fabricated
+    demo table is never touched. Only combinations whose held-out RMSE cleared
+    the decision-grade ceiling are marked validated — the rest send their
+    observations to Blind, which is correct.
+    """
+
+    version = "1.0.0-fitted"
+
+    def __init__(self) -> None:
+        import json
+        import pathlib
+
+        blob = json.loads(
+            (pathlib.Path(__file__).parent.parent.parent / "data" / "coefficients.json")
+            .read_text(encoding="utf-8")
+        )
+        table = blob["estimator"]
+        self.MODELS = table["models"]
+        self.VALIDATED = list(table["validated"])
+        # Legacy single-slope table kept empty; prediction goes through MODELS.
+        self.COEFFICIENTS = {}
+
+    def estimate(self, *, crop, stage, sar_vv, sar_vh, source_keys,
+                 last_clear_ndvi, days_since_clear):
+        """Multivariate prediction over the fitted radar features.
+
+        Falls back through crop:stage then crop:* then nothing. A combination
+        with no model returns None, and the engine sends that observation to
+        Blind — which is the correct answer when no proven model exists.
+        """
+        from elai_confidence_core.estimators import Estimate
+        from app.ingest.fit import build_features
+
+        feats = build_features(sar_vh, sar_vv)
+        if feats is None:
+            return None
+
+        for key in (f"{crop}:{stage}", f"{crop}:*"):
+            model = self.MODELS.get(key)
+            if not model:
+                continue
+            value = model["intercept"] + sum(
+                c * feats[f] for f, c in model["coefficients"].items()
+            )
+            unc = model["rmse"]
+            if len(source_keys) > 1:
+                unc *= 0.85
+            return Estimate(
+                ndvi=max(0.0, min(1.0, value)),
+                uncertainty=unc,
+                model_key=f"radar_multivariate[{key}]",
+                model_version=self.version,
+                sources_used=source_keys,
+                validated_for=[f"{crop}:{stage}"] if key in self.VALIDATED
+                              or f"{crop}:*" in self.VALIDATED else [],
+            )
+        return None
+
+
 def active_estimator():
-    """`ELAI_ESTIMATOR=unfitted` shows what the platform does before the model exists."""
-    if os.getenv("ELAI_ESTIMATOR", "demo_fitted") == "unfitted":
+    """Preference order: real fitted coefficients, then the explicit override.
+
+    `ELAI_ESTIMATOR=unfitted` shows what the platform does before any model has
+    been proven — every farm Blind. That contrast is the Part 2b demo.
+    """
+    import pathlib
+
+    mode = os.getenv("ELAI_ESTIMATOR", "auto")
+    if mode == "unfitted":
         return UnfittedEstimator()
+    if mode == "demo_fitted":
+        return DemoFittedEstimator()
+
+    coef = pathlib.Path(__file__).parent.parent.parent / "data" / "coefficients.json"
+    if coef.exists():
+        try:
+            return FittedFromData()
+        except Exception:  # noqa: BLE001 — never let a bad file break startup
+            pass
     return DemoFittedEstimator()

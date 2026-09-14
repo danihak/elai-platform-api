@@ -1,0 +1,197 @@
+{
+ "results": {
+  "cotton:germination": {
+   "fitted": false,
+   "n": 1,
+   "reason": "only 1 clear-day pairs, need 30"
+  },
+  "cotton:unknown": {
+   "fitted": true,
+   "n": 418,
+   "n_train": 292,
+   "n_holdout": 126,
+   "features": [
+    "vh_db",
+    "vv_db",
+    "ratio_db",
+    "rvi"
+   ],
+   "intercept": 0.850445,
+   "coefficients": {
+    "vh_db": 0.024497,
+    "vv_db": 0.002705,
+    "ratio_db": 0.021793,
+    "rvi": 0.344339
+   },
+   "rmse": 0.1393,
+   "r2": 0.091,
+   "bias": -0.0245
+  },
+  "cotton:vegetative": {
+   "fitted": false,
+   "n": 3,
+   "reason": "only 3 clear-day pairs, need 30"
+  },
+  "maize:flowering": {
+   "fitted": false,
+   "n": 3,
+   "reason": "only 3 clear-day pairs, need 30"
+  },
+  "maize:germination": {
+   "fitted": false,
+   "n": 4,
+   "reason": "only 4 clear-day pairs, need 30"
+  },
+  "maize:unknown": {
+   "fitted": true,
+   "n": 264,
+   "n_train": 184,
+   "n_holdout": 80,
+   "features": [
+    "vh_db",
+    "vv_db",
+    "ratio_db",
+    "rvi"
+   ],
+   "intercept": -1.482194,
+   "coefficients": {
+    "vh_db": -0.035302,
+    "vv_db": 0.036328,
+    "ratio_db": -0.071633,
+    "rvi": 1.839786
+   },
+   "rmse": 0.0899,
+   "r2": 0.4916,
+   "bias": 0.0036
+  },
+  "cotton:*": {
+   "fitted": true,
+   "n": 422,
+   "n_train": 295,
+   "n_holdout": 127,
+   "features": [
+    "vh_db",
+    "vv_db",
+    "ratio_db",
+    "rvi"
+   ],
+   "intercept": -0.176759,
+   "coefficients": {
+    "vh_db": -0.00193,
+    "vv_db": 0.029689,
+    "ratio_db": -0.031623,
+    "rvi": 1.049601
+   },
+   "rmse": 0.1309,
+   "r2": 0.1531,
+   "bias": -0.0222
+  },
+  "maize:*": {
+   "fitted": true,
+   "n": 271,
+   "n_train": 189,
+   "n_holdout": 82,
+   "features": [
+    "vh_db",
+    "vv_db",
+    "ratio_db",
+    "rvi"
+   ],
+   "intercept": 0.301223,
+   "coefficients": {
+    "vh_db": 0.007974,
+    "vv_db": -0.015815,
+    "ratio_db": 0.023789,
+    "rvi": 0.484805
+   },
+   "rmse": 0.1012,
+   "r2": 0.3656,
+   "bias": 0.0003
+  }
+ },
+ "estimator": {
+  "models": {
+   "cotton:unknown": {
+    "features": [
+     "vh_db",
+     "vv_db",
+     "ratio_db",
+     "rvi"
+    ],
+    "intercept": 0.850445,
+    "coefficients": {
+     "vh_db": 0.024497,
+     "vv_db": 0.002705,
+     "ratio_db": 0.021793,
+     "rvi": 0.344339
+    },
+    "rmse": 0.1393,
+    "r2": 0.091
+   },
+   "maize:unknown": {
+    "features": [
+     "vh_db",
+     "vv_db",
+     "ratio_db",
+     "rvi"
+    ],
+    "intercept": -1.482194,
+    "coefficients": {
+     "vh_db": -0.035302,
+     "vv_db": 0.036328,
+     "ratio_db": -0.071633,
+     "rvi": 1.839786
+    },
+    "rmse": 0.0899,
+    "r2": 0.4916
+   },
+   "cotton:*": {
+    "features": [
+     "vh_db",
+     "vv_db",
+     "ratio_db",
+     "rvi"
+    ],
+    "intercept": -0.176759,
+    "coefficients": {
+     "vh_db": -0.00193,
+     "vv_db": 0.029689,
+     "ratio_db": -0.031623,
+     "rvi": 1.049601
+    },
+    "rmse": 0.1309,
+    "r2": 0.1531
+   },
+   "maize:*": {
+    "features": [
+     "vh_db",
+     "vv_db",
+     "ratio_db",
+     "rvi"
+    ],
+    "intercept": 0.301223,
+    "coefficients": {
+     "vh_db": 0.007974,
+     "vv_db": -0.015815,
+     "ratio_db": 0.023789,
+     "rvi": 0.484805
+    },
+    "rmse": 0.1012,
+    "r2": 0.3656
+   }
+  },
+  "validated": [
+   "maize:*",
+   "maize:unknown"
+  ],
+  "rejected": {
+   "cotton:germination": "only 1 clear-day pairs, need 30",
+   "cotton:unknown": "held-out RMSE 0.1393 exceeds 0.12",
+   "cotton:vegetative": "only 3 clear-day pairs, need 30",
+   "maize:flowering": "only 3 clear-day pairs, need 30",
+   "maize:germination": "only 4 clear-day pairs, need 30",
+   "cotton:*": "held-out RMSE 0.1309 exceeds 0.12"
+  },
+  "max_rmse": 0.12
+ }
+}

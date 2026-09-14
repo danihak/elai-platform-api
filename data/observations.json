@@ -1,0 +1,1553 @@
+{
+ "as_of": "2026-09-06",
+ "source": "sentinel-hub",
+ "farms": {
+  "TS-MZ-0044": [
+   {
+    "date": "2026-06-12",
+    "valid_pixel_fraction": 1.0,
+    "mean_cloud_probability": 0.0,
+    "ndvi": 0.2231,
+    "ndvi_stddev": 0.1038,
+    "ndwi": -0.0919,
+    "gci": 1.0196,
+    "das": 0,
+    "stage": "germination",
+    "cloudy": false,
+    "sar_vv": -12.454,
+    "sar_vh": -22.0507,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-06-17",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 5,
+    "stage": "germination",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-06-22",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 10,
+    "stage": "germination",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-06-27",
+    "valid_pixel_fraction": 1.0,
+    "mean_cloud_probability": 0.0,
+    "ndvi": 0.2686,
+    "ndvi_stddev": 0.1131,
+    "ndwi": -0.0079,
+    "gci": 1.021,
+    "das": 15,
+    "stage": "germination",
+    "cloudy": false,
+    "sar_vv": -8.9455,
+    "sar_vh": -16.8777,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-07-02",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 20,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-07-07",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 25,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-07-12",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 30,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-07-17",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 35,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": -11.3519,
+    "sar_vh": -20.1646,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-07-22",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 40,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-07-27",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 45,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": -12.0283,
+    "sar_vh": -19.3864,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-08-01",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 50,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-08-06",
+    "valid_pixel_fraction": 1.0,
+    "mean_cloud_probability": 0.0,
+    "ndvi": 0.515,
+    "ndvi_stddev": 0.1175,
+    "ndwi": 0.2471,
+    "gci": 1.7762,
+    "das": 55,
+    "stage": "flowering",
+    "cloudy": false,
+    "sar_vv": -9.9639,
+    "sar_vh": -20.056,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-08-11",
+    "valid_pixel_fraction": 1.0,
+    "mean_cloud_probability": 0.0,
+    "ndvi": 0.5781,
+    "ndvi_stddev": 0.1284,
+    "ndwi": 0.2263,
+    "gci": 2.1471,
+    "das": 60,
+    "stage": "flowering",
+    "cloudy": false,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-08-16",
+    "valid_pixel_fraction": 1.0,
+    "mean_cloud_probability": 0.0,
+    "ndvi": 0.4228,
+    "ndvi_stddev": 0.0993,
+    "ndwi": 0.1933,
+    "gci": 1.201,
+    "das": 65,
+    "stage": "flowering",
+    "cloudy": false,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-08-21",
+    "valid_pixel_fraction": 1.0,
+    "mean_cloud_probability": 0.0,
+    "ndvi": 0.5246,
+    "ndvi_stddev": 0.0433,
+    "ndwi": 0.1628,
+    "gci": 1.7504,
+    "das": 70,
+    "stage": "flowering",
+    "cloudy": false,
+    "sar_vv": -9.689,
+    "sar_vh": -18.1615,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-08-26",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 75,
+    "stage": "grain_fill",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-08-31",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 80,
+    "stage": "grain_fill",
+    "cloudy": true,
+    "sar_vv": -9.921,
+    "sar_vh": -37.7932,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   }
+  ],
+  "TS-MZ-0051": [
+   {
+    "date": "2026-06-09",
+    "valid_pixel_fraction": 1.0,
+    "mean_cloud_probability": 0.0,
+    "ndvi": 0.1943,
+    "ndvi_stddev": 0.0981,
+    "ndwi": -0.0564,
+    "gci": 0.8137,
+    "das": 0,
+    "stage": "germination",
+    "cloudy": false,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-06-14",
+    "valid_pixel_fraction": 1.0,
+    "mean_cloud_probability": 0.0,
+    "ndvi": 0.2133,
+    "ndvi_stddev": 0.1256,
+    "ndwi": -0.0595,
+    "gci": 0.932,
+    "das": 5,
+    "stage": "germination",
+    "cloudy": false,
+    "sar_vv": -12.7788,
+    "sar_vh": -22.0347,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-06-19",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 10,
+    "stage": "germination",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-06-24",
+    "valid_pixel_fraction": 1.0,
+    "mean_cloud_probability": 0.0,
+    "ndvi": 0.254,
+    "ndvi_stddev": 0.1729,
+    "ndwi": 0.0191,
+    "gci": 1.0139,
+    "das": 15,
+    "stage": "germination",
+    "cloudy": false,
+    "sar_vv": -8.3707,
+    "sar_vh": -13.9575,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-06-29",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 20,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-07-04",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 25,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-07-09",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 30,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-07-14",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 35,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": -9.4714,
+    "sar_vh": -16.4612,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-07-19",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 40,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-07-24",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 45,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-07-29",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 50,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": -14.8042,
+    "sar_vh": -22.7349,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-08-03",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 55,
+    "stage": "flowering",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-08-08",
+    "valid_pixel_fraction": 1.0,
+    "mean_cloud_probability": 0.0,
+    "ndvi": 0.4868,
+    "ndvi_stddev": 0.1831,
+    "ndwi": 0.2061,
+    "gci": 1.7897,
+    "das": 60,
+    "stage": "flowering",
+    "cloudy": false,
+    "sar_vv": -14.4198,
+    "sar_vh": -23.6703,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-08-13",
+    "valid_pixel_fraction": 1.0,
+    "mean_cloud_probability": 0.0,
+    "ndvi": 0.4312,
+    "ndvi_stddev": 0.1009,
+    "ndwi": 0.1574,
+    "gci": 1.3924,
+    "das": 65,
+    "stage": "flowering",
+    "cloudy": false,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-08-18",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 70,
+    "stage": "flowering",
+    "cloudy": true,
+    "sar_vv": -11.7235,
+    "sar_vh": -21.3867,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-08-23",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 75,
+    "stage": "grain_fill",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-08-28",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 80,
+    "stage": "grain_fill",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   }
+  ],
+  "TS-MZ-0063": [
+   {
+    "date": "2026-06-18",
+    "valid_pixel_fraction": 1.0,
+    "mean_cloud_probability": 0.0,
+    "ndvi": 0.1214,
+    "ndvi_stddev": 0.086,
+    "ndwi": -0.1107,
+    "gci": 0.4449,
+    "das": 0,
+    "stage": "germination",
+    "cloudy": false,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-06-23",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 5,
+    "stage": "germination",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-06-28",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 10,
+    "stage": "germination",
+    "cloudy": true,
+    "sar_vv": -1.8377,
+    "sar_vh": -14.8565,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-07-03",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 15,
+    "stage": "germination",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-07-08",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 20,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-07-13",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 25,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": -3.554,
+    "sar_vh": -15.6231,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-07-18",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 30,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-07-23",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 35,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-07-28",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 40,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": 2.341,
+    "sar_vh": -12.875,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-08-02",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 45,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-08-07",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 50,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": -2.9387,
+    "sar_vh": -15.2247,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-08-12",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 55,
+    "stage": "flowering",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-08-17",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 60,
+    "stage": "flowering",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-08-22",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 65,
+    "stage": "flowering",
+    "cloudy": true,
+    "sar_vv": -2.7124,
+    "sar_vh": -14.9081,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-08-27",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 70,
+    "stage": "flowering",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-09-01",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 75,
+    "stage": "grain_fill",
+    "cloudy": true,
+    "sar_vv": -3.3359,
+    "sar_vh": -34.1286,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   }
+  ],
+  "TS-CT-0107": [
+   {
+    "date": "2026-06-21",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 0,
+    "stage": "germination",
+    "cloudy": true,
+    "sar_vv": -6.271,
+    "sar_vh": -11.923,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-06-26",
+    "valid_pixel_fraction": 0.7727,
+    "mean_cloud_probability": 0.2273,
+    "ndvi": 0.1571,
+    "ndvi_stddev": 0.0346,
+    "ndwi": -0.1116,
+    "gci": 0.5925,
+    "das": 5,
+    "stage": "germination",
+    "cloudy": false,
+    "sar_vv": -7.1834,
+    "sar_vh": -12.553,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-07-01",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 10,
+    "stage": "germination",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-07-06",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 15,
+    "stage": "germination",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-07-11",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 20,
+    "stage": "germination",
+    "cloudy": true,
+    "sar_vv": -6.972,
+    "sar_vh": -12.3416,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-07-16",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 25,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": -7.6449,
+    "sar_vh": -14.8801,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-07-21",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 30,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": -6.4917,
+    "sar_vh": -12.6528,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-07-26",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 35,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": -5.0843,
+    "sar_vh": -12.6754,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-07-31",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 40,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-08-05",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 45,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": -6.633,
+    "sar_vh": -12.3608,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-08-10",
+    "valid_pixel_fraction": 1.0,
+    "mean_cloud_probability": 0.0,
+    "ndvi": 0.5417,
+    "ndvi_stddev": 0.232,
+    "ndwi": 0.2488,
+    "gci": 2.6105,
+    "das": 50,
+    "stage": "vegetative",
+    "cloudy": false,
+    "sar_vv": -6.7409,
+    "sar_vh": -13.2547,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-08-15",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 55,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": -6.1607,
+    "sar_vh": -12.409,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-08-20",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 60,
+    "stage": "flowering",
+    "cloudy": true,
+    "sar_vv": -6.6904,
+    "sar_vh": -13.7258,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-08-25",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 65,
+    "stage": "flowering",
+    "cloudy": true,
+    "sar_vv": -6.3435,
+    "sar_vh": -12.6265,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-08-30",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 70,
+    "stage": "flowering",
+    "cloudy": true,
+    "sar_vv": -6.0911,
+    "sar_vh": -21.7486,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   }
+  ],
+  "TS-CT-0119": [
+   {
+    "date": "2026-06-15",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 0,
+    "stage": "germination",
+    "cloudy": true,
+    "sar_vv": -7.6563,
+    "sar_vh": -15.5775,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-06-20",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 5,
+    "stage": "germination",
+    "cloudy": true,
+    "sar_vv": -5.5241,
+    "sar_vh": -13.604,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-06-25",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 10,
+    "stage": "germination",
+    "cloudy": true,
+    "sar_vv": -7.196,
+    "sar_vh": -15.4,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-06-30",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 15,
+    "stage": "germination",
+    "cloudy": true,
+    "sar_vv": -6.9814,
+    "sar_vh": -15.43,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-07-05",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 20,
+    "stage": "germination",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-07-10",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 25,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": -6.9972,
+    "sar_vh": -15.4,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-07-15",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 30,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": -7.4285,
+    "sar_vh": -15.5306,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-07-20",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 35,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": -6.6008,
+    "sar_vh": -15.2619,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-07-25",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 40,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": -4.7763,
+    "sar_vh": -15.3344,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-07-30",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 45,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-08-04",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 50,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": -6.6711,
+    "sar_vh": -14.9266,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-08-09",
+    "valid_pixel_fraction": 1.0,
+    "mean_cloud_probability": 0.0,
+    "ndvi": 0.5927,
+    "ndvi_stddev": 0.2166,
+    "ndwi": 0.191,
+    "gci": 2.9692,
+    "das": 55,
+    "stage": "vegetative",
+    "cloudy": false,
+    "sar_vv": -6.3384,
+    "sar_vh": -13.4684,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-08-14",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 60,
+    "stage": "flowering",
+    "cloudy": true,
+    "sar_vv": -8.8105,
+    "sar_vh": -16.1219,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-08-19",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 65,
+    "stage": "flowering",
+    "cloudy": true,
+    "sar_vv": -7.7302,
+    "sar_vh": -15.1386,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-08-24",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 70,
+    "stage": "flowering",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-08-29",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 75,
+    "stage": "flowering",
+    "cloudy": true,
+    "sar_vv": -8.4202,
+    "sar_vh": -14.4244,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   }
+  ],
+  "TS-CT-0126": [
+   {
+    "date": "2026-06-24",
+    "valid_pixel_fraction": 0.9808,
+    "mean_cloud_probability": 0.0192,
+    "ndvi": 0.167,
+    "ndvi_stddev": 0.0462,
+    "ndwi": -0.1073,
+    "gci": 0.8736,
+    "das": 0,
+    "stage": "germination",
+    "cloudy": false,
+    "sar_vv": -8.4148,
+    "sar_vh": -20.8554,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-06-29",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 5,
+    "stage": "germination",
+    "cloudy": true,
+    "sar_vv": -7.5001,
+    "sar_vh": -17.673,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-07-04",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 10,
+    "stage": "germination",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-07-09",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 15,
+    "stage": "germination",
+    "cloudy": true,
+    "sar_vv": -9.4491,
+    "sar_vh": -19.1981,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-07-14",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 20,
+    "stage": "germination",
+    "cloudy": true,
+    "sar_vv": -10.0627,
+    "sar_vh": -20.0815,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-07-19",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 25,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-07-24",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 30,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": -8.6393,
+    "sar_vh": -18.8728,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-07-29",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 35,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": -3.2067,
+    "sar_vh": -12.6597,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-08-03",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 40,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": -6.3123,
+    "sar_vh": -14.2439,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-08-08",
+    "valid_pixel_fraction": 1.0,
+    "mean_cloud_probability": 0.0,
+    "ndvi": 0.4771,
+    "ndvi_stddev": 0.2471,
+    "ndwi": 0.0679,
+    "gci": 2.7463,
+    "das": 45,
+    "stage": "vegetative",
+    "cloudy": false,
+    "sar_vv": -4.6636,
+    "sar_vh": -12.8869,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-08-13",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 50,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": -9.3691,
+    "sar_vh": -18.4542,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-08-18",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 55,
+    "stage": "vegetative",
+    "cloudy": true,
+    "sar_vv": -4.0287,
+    "sar_vh": -15.2133,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   },
+   {
+    "date": "2026-08-23",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 60,
+    "stage": "flowering",
+    "cloudy": true,
+    "sar_vv": null,
+    "sar_vh": null,
+    "radar_sources": []
+   },
+   {
+    "date": "2026-08-28",
+    "valid_pixel_fraction": 0.0,
+    "mean_cloud_probability": 1.0,
+    "ndvi": null,
+    "ndvi_stddev": null,
+    "ndwi": null,
+    "gci": null,
+    "das": 65,
+    "stage": "flowering",
+    "cloudy": true,
+    "sar_vv": -7.5694,
+    "sar_vh": -18.6487,
+    "radar_sources": [
+     "sentinel1"
+    ]
+   }
+  ]
+ }
+}
