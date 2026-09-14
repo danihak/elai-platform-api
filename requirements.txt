@@ -1,0 +1,4 @@
+-r requirements-base.txt
+
+# Railway installs the core from GitHub at build time.
+elai-confidence-core @ git+https://github.com/danihak/elai-confidence-core@v0.1.0

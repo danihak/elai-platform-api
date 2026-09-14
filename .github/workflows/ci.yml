@@ -1,0 +1,22 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+
+      # The core is resolved from THIS repo's owner, so CI is green on a fresh
+      # clone without anyone editing requirements.txt first.
+      - name: Install the confidence core
+        run: pip install "elai-confidence-core @ git+https://github.com/${{ github.repository_owner }}/elai-confidence-core@v0.1.0"
+
+      - name: Install everything else
+        run: pip install -r requirements-base.txt pytest
+
+      - run: pytest -q
+
+      - name: OpenAPI spec is generatable
+        run: python -c "from app.main import app; import json; json.dumps(app.openapi())"

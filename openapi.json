@@ -1,0 +1,1245 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "ELAI Platform API",
+  "description": "\nThe confidence state engine, exposed as an API.\n\nEvery number returned carries four things: the value, the confidence state that\ngoverns it, a pre-formatted `display` string, and the `rule_version` that\nproduced it. Clients render `display` \u2014 they do not format numbers themselves,\nbecause a client that formats can print a point value on a field nobody could\nsee, which is the defect this system exists to remove.\n\nStates:\n\n* **Verified** \u2014 measured directly from clear optical.\n* **Degraded** \u2014 estimated from radar or interpolation, with a stated error band.\n* **Blind** \u2014 not observed, and no estimate is trustworthy enough to show.\n",
+  "version": "0.1.0"
+ },
+ "paths": {
+  "/v1/farms": {
+   "get": {
+    "tags": [
+     "farms"
+    ],
+    "summary": "List farms",
+    "operationId": "list_farms_v1_farms_get",
+    "parameters": [
+     {
+      "name": "crop",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Crop"
+      }
+     },
+     {
+      "name": "district",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "District"
+      }
+     },
+     {
+      "name": "irrigation_type",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Irrigation Type"
+      }
+     },
+     {
+      "name": "client_id",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Client Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/FarmOut"
+         },
+         "title": "Response List Farms V1 Farms Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/farms/{farm_id}": {
+   "get": {
+    "tags": [
+     "farms"
+    ],
+    "summary": "Farm detail",
+    "operationId": "get_farm_v1_farms__farm_id__get",
+    "parameters": [
+     {
+      "name": "farm_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Farm Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/FarmOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/farms/{farm_id}/state": {
+   "get": {
+    "tags": [
+     "farms"
+    ],
+    "summary": "Current confidence state and metrics",
+    "description": "The screen S4 payload.\n\nEvery metric is derived through the core, so stress, area under stress and\nyield cannot disagree with each other about how much to trust this week.",
+    "operationId": "farm_state_v1_farms__farm_id__state_get",
+    "parameters": [
+     {
+      "name": "farm_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Farm Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Farm State V1 Farms  Farm Id  State Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/farms/{farm_id}/observations": {
+   "get": {
+    "tags": [
+     "farms"
+    ],
+    "summary": "Full season observation history",
+    "description": "Screen S7, and the data source for ClaimChronos.\n\nAppend-only. Every row carries the rule version that produced its state, so\nthe same query in March returns September's answer.",
+    "operationId": "farm_observations_v1_farms__farm_id__observations_get",
+    "parameters": [
+     {
+      "name": "farm_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Farm Id"
+      }
+     },
+     {
+      "name": "limit",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "maximum": 500,
+       "default": 200,
+       "title": "Limit"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/ObservationOut"
+         },
+         "title": "Response Farm Observations V1 Farms  Farm Id  Observations Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/farms/{farm_id}/ledger": {
+   "get": {
+    "tags": [
+     "farms"
+    ],
+    "summary": "Audit ledger for this farm",
+    "operationId": "farm_ledger_v1_farms__farm_id__ledger_get",
+    "parameters": [
+     {
+      "name": "farm_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Farm Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "additionalProperties": true
+         },
+         "title": "Response Farm Ledger V1 Farms  Farm Id  Ledger Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/portfolio": {
+   "get": {
+    "tags": [
+     "portfolio"
+    ],
+    "summary": "Portfolio view with the confidence mix",
+    "description": "The confidence mix is weighted by AREA, not by farm count.\n\nA hundred small Blind plots and one large Blind plot are different problems,\nand a farm-count bar hides that. LenderBook does the same roll-up weighted by\nrupees.",
+    "operationId": "portfolio_v1_portfolio_get",
+    "parameters": [
+     {
+      "name": "crop",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Crop"
+      }
+     },
+     {
+      "name": "district",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "District"
+      }
+     },
+     {
+      "name": "client_id",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Client Id"
+      }
+     },
+     {
+      "name": "state",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "State"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Portfolio V1 Portfolio Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/coverage": {
+   "get": {
+    "tags": [
+     "coverage"
+    ],
+    "summary": "Coverage and SLA status across the set",
+    "operationId": "coverage_all_v1_coverage_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "type": "object",
+         "title": "Response Coverage All V1 Coverage Get"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/coverage/{farm_id}": {
+   "get": {
+    "tags": [
+     "coverage"
+    ],
+    "summary": "Coverage and SLA status for one farm",
+    "operationId": "coverage_one_v1_coverage__farm_id__get",
+    "parameters": [
+     {
+      "name": "farm_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Farm Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Coverage One V1 Coverage  Farm Id  Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/agent/explain": {
+   "post": {
+    "tags": [
+     "agent"
+    ],
+    "summary": "Explain a flag from the evidence chain",
+    "operationId": "explain_v1_agent_explain_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ExplainRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "type": "object",
+         "title": "Response Explain V1 Agent Explain Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/agent/tools": {
+   "get": {
+    "tags": [
+     "agent"
+    ],
+    "summary": "The tool surface the model is allowed to use",
+    "description": "Worth showing a tech team directly.\n\nThis is the entire surface. The model cannot read the database, cannot\nbrowse, and knows nothing about any farm from training. If a fact is not\nreachable through one of these five functions, it cannot appear in an answer.",
+    "operationId": "tools_v1_agent_tools_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "type": "object",
+         "title": "Response Tools V1 Agent Tools Get"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/feedback": {
+   "post": {
+    "tags": [
+     "feedback"
+    ],
+    "summary": "Submit ground truth from a farmer or field officer",
+    "operationId": "submit_v1_feedback_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/FeedbackIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "type": "object",
+         "title": "Response Submit V1 Feedback Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/lenderbook/book": {
+   "get": {
+    "tags": [
+     "lenderbook"
+    ],
+    "summary": "Book view with exposure by confidence state",
+    "description": "Exposure mix is weighted by RUPEES, not farm count.\n\nUnmatched plots are excluded from every figure and reported separately rather\nthan quietly dropped, which is what most vendors do.",
+    "operationId": "book_v1_lenderbook_book_get",
+    "parameters": [
+     {
+      "name": "client_id",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Client Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Book V1 Lenderbook Book Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/lenderbook/call-list": {
+   "get": {
+    "tags": [
+     "lenderbook"
+    ],
+    "summary": "Borrowers to call, ranked by harvest window",
+    "description": "Ranked by when the crop is ready, not by an abstract risk score.\n\nThe officer's question is \"who do I call this week\", not \"who is riskiest\".",
+    "operationId": "call_list_v1_lenderbook_call_list_get",
+    "parameters": [
+     {
+      "name": "client_id",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Client Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Call List V1 Lenderbook Call List Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/trust/state/{farm_id}": {
+   "get": {
+    "tags": [
+     "trustlayer"
+    ],
+    "summary": "Current state for one farm",
+    "operationId": "state_v1_trust_state__farm_id__get",
+    "parameters": [
+     {
+      "name": "farm_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Farm Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response State V1 Trust State  Farm Id  Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/trust/states:batch": {
+   "post": {
+    "tags": [
+     "trustlayer"
+    ],
+    "summary": "State for up to 500 farms",
+    "operationId": "states_batch_v1_trust_states_batch_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/BatchRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "type": "object",
+         "title": "Response States Batch V1 Trust States Batch Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/v1/trust/events/sample": {
+   "get": {
+    "tags": [
+     "trustlayer"
+    ],
+    "summary": "Webhook payload shapes",
+    "description": "Sandbox fixtures for the six webhook events.\n\nDeterministic on purpose. An integrator cannot write a test against a live\nsatellite feed, so without fixed fixtures nobody ever exercises the Blind\nbranch until a monsoon hits with real money attached.",
+    "operationId": "event_samples_v1_trust_events_sample_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "type": "object",
+         "title": "Response Event Samples V1 Trust Events Sample Get"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/healthz": {
+   "get": {
+    "tags": [
+     "ops"
+    ],
+    "summary": "Liveness and readiness",
+    "description": "Checked by the load balancer every 10 seconds.\n\nVerifies the core loaded and which rule version is live \u2014 not just that the\nprocess is running. A task serving the wrong rule version is worse than a\ntask that is down.",
+    "operationId": "healthz_healthz_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "type": "object",
+         "title": "Response Healthz Healthz Get"
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "components": {
+  "schemas": {
+   "BatchRequest": {
+    "properties": {
+     "farm_ids": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Farm Ids"
+     }
+    },
+    "type": "object",
+    "required": [
+     "farm_ids"
+    ],
+    "title": "BatchRequest"
+   },
+   "ExplainRequest": {
+    "properties": {
+     "farm_id": {
+      "type": "string",
+      "title": "Farm Id"
+     },
+     "question": {
+      "type": "string",
+      "title": "Question",
+      "default": "Why is this field flagged?"
+     },
+     "audience": {
+      "type": "string",
+      "title": "Audience",
+      "default": "farmer"
+     },
+     "use_llm": {
+      "type": "boolean",
+      "title": "Use Llm",
+      "default": true
+     }
+    },
+    "type": "object",
+    "required": [
+     "farm_id"
+    ],
+    "title": "ExplainRequest"
+   },
+   "FarmOut": {
+    "properties": {
+     "farm_id": {
+      "type": "string",
+      "title": "Farm Id"
+     },
+     "farm_name": {
+      "type": "string",
+      "title": "Farm Name"
+     },
+     "farmer_name": {
+      "type": "string",
+      "title": "Farmer Name"
+     },
+     "mobile_masked": {
+      "type": "string",
+      "title": "Mobile Masked",
+      "description": "DPDP: full numbers are never returned."
+     },
+     "country": {
+      "type": "string",
+      "title": "Country"
+     },
+     "state": {
+      "type": "string",
+      "title": "State"
+     },
+     "district": {
+      "type": "string",
+      "title": "District"
+     },
+     "mandal": {
+      "type": "string",
+      "title": "Mandal"
+     },
+     "area_ha": {
+      "type": "number",
+      "title": "Area Ha"
+     },
+     "lat": {
+      "type": "number",
+      "title": "Lat"
+     },
+     "lon": {
+      "type": "number",
+      "title": "Lon"
+     },
+     "polygon": {
+      "items": {
+       "items": {
+        "type": "number"
+       },
+       "type": "array"
+      },
+      "type": "array",
+      "title": "Polygon"
+     },
+     "crop": {
+      "type": "string",
+      "title": "Crop"
+     },
+     "variety": {
+      "type": "string",
+      "title": "Variety"
+     },
+     "season": {
+      "type": "string",
+      "title": "Season"
+     },
+     "irrigation_type": {
+      "type": "string",
+      "title": "Irrigation Type"
+     },
+     "sowing_date": {
+      "type": "string",
+      "title": "Sowing Date"
+     },
+     "sowing_date_source": {
+      "type": "string",
+      "title": "Sowing Date Source"
+     },
+     "boundary_source": {
+      "type": "string",
+      "title": "Boundary Source"
+     },
+     "predicted_harvest_date": {
+      "type": "string",
+      "title": "Predicted Harvest Date"
+     },
+     "client_id": {
+      "type": "string",
+      "title": "Client Id"
+     },
+     "client_tier": {
+      "type": "string",
+      "title": "Client Tier"
+     },
+     "sla_tier": {
+      "type": "string",
+      "title": "Sla Tier"
+     }
+    },
+    "type": "object",
+    "required": [
+     "farm_id",
+     "farm_name",
+     "farmer_name",
+     "mobile_masked",
+     "country",
+     "state",
+     "district",
+     "mandal",
+     "area_ha",
+     "lat",
+     "lon",
+     "polygon",
+     "crop",
+     "variety",
+     "season",
+     "irrigation_type",
+     "sowing_date",
+     "sowing_date_source",
+     "boundary_source",
+     "predicted_harvest_date",
+     "client_id",
+     "client_tier",
+     "sla_tier"
+    ],
+    "title": "FarmOut"
+   },
+   "FeedbackIn": {
+    "properties": {
+     "farm_id": {
+      "type": "string",
+      "title": "Farm Id"
+     },
+     "responder": {
+      "type": "string",
+      "title": "Responder",
+      "description": "farmer | field_officer",
+      "default": "farmer"
+     },
+     "confirms_flag": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Confirms Flag",
+      "description": "A 'no' is worth more than a 'yes'. It is a labelled false positive."
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     },
+     "gps_lat": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Gps Lat"
+     },
+     "gps_lon": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Gps Lon"
+     },
+     "photo_ref": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Photo Ref"
+     },
+     "actual_productivity_mt_ha": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Actual Productivity Mt Ha"
+     },
+     "consent_research_use": {
+      "type": "boolean",
+      "title": "Consent Research Use",
+      "description": "If false, the reply still moves this farm's badge but is excluded from training.",
+      "default": true
+     }
+    },
+    "type": "object",
+    "required": [
+     "farm_id"
+    ],
+    "title": "FeedbackIn"
+   },
+   "HTTPValidationError": {
+    "properties": {
+     "detail": {
+      "items": {
+       "$ref": "#/components/schemas/ValidationError"
+      },
+      "type": "array",
+      "title": "Detail"
+     }
+    },
+    "type": "object",
+    "title": "HTTPValidationError"
+   },
+   "ObservationOut": {
+    "properties": {
+     "obs_date": {
+      "type": "string",
+      "title": "Obs Date"
+     },
+     "das": {
+      "type": "integer",
+      "title": "Das"
+     },
+     "stage": {
+      "type": "string",
+      "title": "Stage"
+     },
+     "state": {
+      "type": "string",
+      "title": "State"
+     },
+     "rung_used": {
+      "type": "string",
+      "title": "Rung Used"
+     },
+     "rung_label": {
+      "type": "string",
+      "title": "Rung Label"
+     },
+     "source": {
+      "type": "string",
+      "title": "Source"
+     },
+     "ndvi": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ndvi"
+     },
+     "ndvi_uncertainty": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ndvi Uncertainty"
+     },
+     "valid_pixel_fraction": {
+      "type": "number",
+      "title": "Valid Pixel Fraction"
+     },
+     "cloudy": {
+      "type": "boolean",
+      "title": "Cloudy"
+     },
+     "days_since_last_clear_optical": {
+      "type": "integer",
+      "title": "Days Since Last Clear Optical"
+     },
+     "suppressed_indices": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Suppressed Indices",
+      "default": []
+     },
+     "reason": {
+      "type": "string",
+      "title": "Reason"
+     },
+     "marginal_cost_inr": {
+      "type": "number",
+      "title": "Marginal Cost Inr"
+     },
+     "rule_version": {
+      "type": "string",
+      "title": "Rule Version"
+     }
+    },
+    "type": "object",
+    "required": [
+     "obs_date",
+     "das",
+     "stage",
+     "state",
+     "rung_used",
+     "rung_label",
+     "source",
+     "valid_pixel_fraction",
+     "cloudy",
+     "days_since_last_clear_optical",
+     "reason",
+     "marginal_cost_inr",
+     "rule_version"
+    ],
+    "title": "ObservationOut"
+   },
+   "ValidationError": {
+    "properties": {
+     "loc": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "integer"
+        }
+       ]
+      },
+      "type": "array",
+      "title": "Location"
+     },
+     "msg": {
+      "type": "string",
+      "title": "Message"
+     },
+     "type": {
+      "type": "string",
+      "title": "Error Type"
+     },
+     "input": {
+      "title": "Input"
+     },
+     "ctx": {
+      "type": "object",
+      "title": "Context"
+     }
+    },
+    "type": "object",
+    "required": [
+     "loc",
+     "msg",
+     "type"
+    ],
+    "title": "ValidationError"
+   }
+  }
+ }
+}
