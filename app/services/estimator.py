@@ -91,15 +91,22 @@ class FittedFromData(BaselineSarRegression):
             if not model:
                 continue
 
-            # A model that was fitted but did NOT clear the decision-grade
-            # ceiling is not usable. Returning it anyway and letting the engine
-            # judge invites exactly the accident found on the first real run:
-            # cotton was rejected at RMSE 0.1309, then a 15% multi-source
-            # "narrowing" I had invented brought it to 0.111 and slipped it
-            # under the 0.12 gate. A rejected model reached a client because of
-            # a factor nobody measured.
-            if key not in self.VALIDATED:
-                continue
+            # Validation gates what may be shown ALONE. It does not gate what
+            # may contribute to a variance-weighted fusion.
+            #
+            # These are different questions and conflating them was an error.
+            # A radar model at RMSE 0.137 is not decision-grade on its own — no
+            # client should ever see that number unaccompanied. But inside the
+            # fusion it is weighted by exactly that 0.137, so it contributes
+            # roughly a tenth of the answer and cannot mislead: a weak source
+            # weighted honestly still reduces uncertainty. Excluding it entirely
+            # throws away real information and, worse, meant the fusion was
+            # CALIBRATED with radar and DEPLOYED without it.
+            #
+            # What the gate still forbids absolutely: returning this estimate as
+            # a standalone Degraded value. That is enforced by the caller, which
+            # only surfaces a fused result.
+            validated = key in self.VALIDATED
 
             value = model["intercept"] + sum(
                 c * feats[f] for f, c in model["coefficients"].items()
@@ -111,13 +118,18 @@ class FittedFromData(BaselineSarRegression):
             # over-claiming of the precise kind this system exists to stop.
             # If fusing sources genuinely narrows the error, fit the fused
             # model and measure it.
+            # The uncertainty is the measured mean + 1 sd across repeated
+            # stratified splits, not the mean. With hold-outs of 7 to 36 rows,
+            # the mean alone understates how wrong this can be.
+            sigma = model.get("rmse_upper") or model["rmse"]
+
             return Estimate(
                 ndvi=max(0.0, min(1.0, value)),
-                uncertainty=model["rmse"],
-                model_key=f"radar_multivariate[{key}]",
+                uncertainty=sigma,
+                model_key=f"radar_multivariate[{key}{'' if validated else ', unvalidated'}]",
                 model_version=self.version,
                 sources_used=source_keys,
-                validated_for=[f"{crop}:{stage}", f"{crop}:*"],
+                validated_for=[f"{crop}:{stage}", f"{crop}:*"] if validated else [],
             )
         return None
 

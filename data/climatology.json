@@ -2,61 +2,61 @@
  "climatology": {
   "cotton": {
    "fitted": true,
-   "n": 422,
+   "n": 681,
    "coefficients": [
-    0.465945,
-    0.06222,
-    -0.088194,
-    -0.097553,
-    0.057216
+    0.464545,
+    0.06249,
+    -0.071872,
+    -0.074448,
+    0.040719
    ],
-   "residual_sigma": 0.1123,
-   "variance_explained": 0.3859
+   "residual_sigma": 0.1083,
+   "variance_explained": 0.3194
   },
   "maize": {
    "fitted": true,
-   "n": 276,
+   "n": 536,
    "coefficients": [
-    0.397477,
-    0.018999,
-    -0.093779,
-    -0.098603,
-    0.062201
+    0.372694,
+    0.01478,
+    -0.075837,
+    -0.084222,
+    0.080224
    ],
-   "residual_sigma": 0.1095,
-   "variance_explained": 0.3526
+   "residual_sigma": 0.1473,
+   "variance_explained": 0.2269
   }
  },
  "persistence_decay": {
   "cotton": {
    "fitted": true,
-   "n": 3623,
-   "decay_per_day": 0.02628,
+   "n": 5798,
+   "decay_per_day": 0.02324,
    "max_gap_days": 60
   },
   "maize": {
    "fitted": true,
-   "n": 1511,
-   "decay_per_day": 0.02011,
+   "n": 3754,
+   "decay_per_day": 0.0249,
    "max_gap_days": 60
   }
  },
  "fusion_calibration": {
   "cotton": {
    "validated": true,
-   "n": 413,
-   "rmse": 0.0466,
-   "mean_claimed_sigma": 0.0534,
-   "calibration": 0.872,
+   "n": 671,
+   "rmse": 0.0488,
+   "mean_claimed_sigma": 0.0499,
+   "calibration": 0.978,
    "overconfident": false,
    "verdict": "well calibrated"
   },
   "maize": {
    "validated": true,
-   "n": 263,
-   "rmse": 0.0473,
-   "mean_claimed_sigma": 0.0458,
-   "calibration": 1.031,
+   "n": 521,
+   "rmse": 0.0539,
+   "mean_claimed_sigma": 0.0579,
+   "calibration": 0.931,
    "overconfident": false,
    "verdict": "well calibrated"
   }

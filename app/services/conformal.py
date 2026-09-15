@@ -195,6 +195,42 @@ def evaluate(
     return out
 
 
+def enforce_measured_coverage(
+    models: Dict[str, ConformalModel],
+    diagnostics: Dict[str, Dict[str, Dict[str, float]]],
+    tolerance: float = 0.02,
+) -> Dict[str, ConformalModel]:
+    """Withdraw any level whose MEASURED coverage falls short of nominal.
+
+    Conformal's guarantee holds under exchangeability. When exchangeability
+    breaks — a new season, a shifted crop calendar — coverage falls, and the
+    calibration set cannot tell you that. Only a held-back test can.
+
+    Measured on maize: nominal 90% delivered 83.8%, nominal 95% delivered 87.3%.
+    Publishing those as guarantees would be worse than publishing nothing, so the
+    level is removed rather than relabelled. A product that sells confidence
+    cannot ship an interval it has watched fail.
+    """
+    for crop, model in models.items():
+        per_level = diagnostics.get(crop, {})
+        for key, d in per_level.items():
+            if d.get("picp") is None:
+                continue
+            if d["picp"] < d["nominal"] - tolerance:
+                model.multipliers.pop(key, None)
+                model.diagnostics[key] = {
+                    "withdrawn": 1.0,
+                    "nominal": d["nominal"],
+                    "measured": d["picp"],
+                }
+        if not model.multipliers:
+            model.usable = False
+            model.reason = ("no level achieved its nominal coverage on held-back "
+                            "fields; exchangeability has broken and the intervals "
+                            "are withdrawn until recalibrated")
+    return models
+
+
 def interval(
     predicted: float,
     sigma: float,

@@ -146,7 +146,7 @@ def cmd_fit() -> int:
             for r in block["observations"]:
                 pairs.append({"crop": block["crop"], "stage": "unknown",
                               "sar_vh": r["sar_vh"], "sar_vv": r.get("sar_vv"),
-                              "ndvi": r["ndvi"]})
+                              "ndvi": r["ndvi"], "date": r["date"]})
         sources.append(TRAIN_FILE.name)
     print(f"sources: {', '.join(sources)}")
     print(f"{len(pairs)} clear-day radar/optical pairs\n")
@@ -174,8 +174,11 @@ def cmd_fit() -> int:
     for combo, r in results.items():
         if r.get("fitted"):
             coefs = "  ".join(f"{k}={v:+.4f}" for k, v in r["coefficients"].items())
-            print(f"  {combo:26} n={r['n']:4}  rmse={r['rmse']:.4f}  "
-                  f"r2={r.get('r2', 0):+.3f}  bias={r['bias']:+.4f}")
+            print(f"  {combo:26} n={r['n']:4}  rmse={r['rmse']:.4f}"
+                  f"±{r.get('rmse_sd',0):.4f}  upper={r.get('rmse_upper',0):.4f}  "
+                  f"r2={r.get('r2', 0):+.3f}  "
+                  f"holdout={r.get('holdout_condition','mixed')} "
+                  f"n={r['n_holdout']}x{r.get('n_splits',1)}")
             print(f"  {'':26} {coefs}")
         else:
             print(f"  {combo:26} NOT FITTED — {r['reason']}")
@@ -251,7 +254,8 @@ def cmd_fit() -> int:
             print(f"  {crop:8} NOT VALIDATED — {c['reason']}")
 
     # ---- conformal prediction: turn the measured band into a guarantee ----
-    from .services.conformal import (blocked_split, calibrate, evaluate, to_json)
+    from .services.conformal import (blocked_split, calibrate, enforce_measured_coverage,
+                                     evaluate, to_json)
     from .services.fusion import fusion_residuals
 
     decay_map = {c: d.get("decay_per_day", 0.015) for c, d in decay.items()}
@@ -271,11 +275,22 @@ def cmd_fit() -> int:
 
     print()
     print("achieved coverage on fields the calibration never saw")
-    for crop, levels in evaluate(test_set, conformal).items():
+    diags = evaluate(test_set, conformal)
+    for crop, levels in diags.items():
         for lvl, d in levels.items():
             flag = "OK " if d["holds"] else "LOW"
             print(f"  {flag} {crop:8} nominal {d['nominal']:.0%}  "
                   f"PICP {d['picp']:.1%}  width {d['mpiw']:.3f}  n={d['n']}")
+
+    conformal = enforce_measured_coverage(conformal, diags)
+    withdrawn = [(c, k) for c, m in conformal.items()
+                 for k, v in m.diagnostics.items() if v.get("withdrawn")]
+    if withdrawn:
+        print()
+        print("  WITHDRAWN — measured coverage below nominal, not published:")
+        for c, k in withdrawn:
+            d = conformal[c].diagnostics[k]
+            print(f"    {c} at {float(k):.0%}: delivered {d['measured']:.1%}")
 
     CONF_FILE.write_text(json.dumps(to_json(conformal), indent=1), encoding="utf-8")
     print(f"\nwrote {CONF_FILE}")
@@ -423,7 +438,7 @@ def _collect(bundle: dict, pairs: list) -> None:
                 continue
             pairs.append({"crop": farm.crop, "stage": r.get("stage", "unknown"),
                           "sar_vh": r["sar_vh"], "sar_vv": r.get("sar_vv"),
-                          "ndvi": r["ndvi"]})
+                          "ndvi": r["ndvi"], "date": r["date"]})
 
 
 def cmd_status() -> int:

@@ -1,116 +1,198 @@
 {
  "results": {
-  "cotton:germination": {
+  "cotton:flowering": {
    "fitted": false,
-   "n": 1,
-   "reason": "only 1 clear-day pairs, need 30"
+   "n": 3,
+   "reason": "only 3 clear-day pairs, need 30"
+  },
+  "cotton:germination": {
+   "fitted": true,
+   "n": 206,
+   "n_train": 195,
+   "n_holdout": 11,
+   "n_splits": 30,
+   "holdout_condition": "kharif",
+   "features": [
+    "vh_db",
+    "vv_db",
+    "ratio_db",
+    "rvi"
+   ],
+   "intercept": 2.116311,
+   "coefficients": {
+    "vh_db": 0.049163,
+    "vv_db": -0.019188,
+    "ratio_db": 0.068352,
+    "rvi": -0.868069
+   },
+   "rmse": 0.1396,
+   "rmse_sd": 0.0216,
+   "rmse_upper": 0.1612,
+   "r2": 0.0329,
+   "bias": 0.0277
   },
   "cotton:unknown": {
    "fitted": true,
    "n": 418,
-   "n_train": 292,
-   "n_holdout": 126,
+   "n_train": 395,
+   "n_holdout": 23,
+   "n_splits": 30,
+   "holdout_condition": "kharif",
    "features": [
     "vh_db",
     "vv_db",
     "ratio_db",
     "rvi"
    ],
-   "intercept": 0.850445,
+   "intercept": -0.093008,
    "coefficients": {
-    "vh_db": 0.024497,
-    "vv_db": 0.002705,
-    "ratio_db": 0.021793,
-    "rvi": 0.344339
+    "vh_db": -0.000676,
+    "vv_db": 0.027689,
+    "ratio_db": -0.028368,
+    "rvi": 0.967896
    },
-   "rmse": 0.1393,
-   "r2": 0.091,
-   "bias": -0.0245
+   "rmse": 0.1862,
+   "rmse_sd": 0.0917,
+   "rmse_upper": 0.2779,
+   "r2": -0.554,
+   "bias": -0.0221
   },
   "cotton:vegetative": {
    "fitted": false,
-   "n": 3,
-   "reason": "only 3 clear-day pairs, need 30"
+   "n": 6,
+   "reason": "only 6 clear-day pairs, need 30"
   },
   "maize:flowering": {
    "fitted": false,
-   "n": 3,
-   "reason": "only 3 clear-day pairs, need 30"
+   "n": 6,
+   "reason": "only 6 clear-day pairs, need 30"
   },
   "maize:germination": {
-   "fitted": false,
-   "n": 4,
-   "reason": "only 4 clear-day pairs, need 30"
+   "fitted": true,
+   "n": 106,
+   "n_train": 99,
+   "n_holdout": 7,
+   "n_splits": 30,
+   "holdout_condition": "kharif",
+   "features": [
+    "vh_db",
+    "vv_db",
+    "ratio_db",
+    "rvi"
+   ],
+   "intercept": 0.096647,
+   "coefficients": {
+    "vh_db": -0.002952,
+    "vv_db": -0.007521,
+    "ratio_db": 0.004569,
+    "rvi": 0.331095
+   },
+   "rmse": 0.1517,
+   "rmse_sd": 0.0312,
+   "rmse_upper": 0.1829,
+   "r2": -0.1953,
+   "bias": 0.0166
   },
   "maize:unknown": {
    "fitted": true,
    "n": 264,
-   "n_train": 184,
-   "n_holdout": 80,
+   "n_train": 253,
+   "n_holdout": 11,
+   "n_splits": 30,
+   "holdout_condition": "kharif",
    "features": [
     "vh_db",
     "vv_db",
     "ratio_db",
     "rvi"
    ],
-   "intercept": -1.482194,
+   "intercept": -1.088356,
    "coefficients": {
-    "vh_db": -0.035302,
-    "vv_db": 0.036328,
-    "ratio_db": -0.071633,
-    "rvi": 1.839786
+    "vh_db": -0.024851,
+    "vv_db": 0.027627,
+    "ratio_db": -0.052478,
+    "rvi": 1.584028
    },
-   "rmse": 0.0899,
-   "r2": 0.4916,
-   "bias": 0.0036
+   "rmse": 0.1295,
+   "rmse_sd": 0.0214,
+   "rmse_upper": 0.1509,
+   "r2": 0.4729,
+   "bias": -0.0179
   },
   "cotton:*": {
    "fitted": true,
-   "n": 422,
-   "n_train": 295,
-   "n_holdout": 127,
+   "n": 633,
+   "n_train": 597,
+   "n_holdout": 36,
+   "n_splits": 30,
+   "holdout_condition": "kharif",
    "features": [
     "vh_db",
     "vv_db",
     "ratio_db",
     "rvi"
    ],
-   "intercept": -0.176759,
+   "intercept": 0.288237,
    "coefficients": {
-    "vh_db": -0.00193,
-    "vv_db": 0.029689,
-    "ratio_db": -0.031623,
-    "rvi": 1.049601
+    "vh_db": 0.003424,
+    "vv_db": 0.013953,
+    "ratio_db": -0.010525,
+    "rvi": 0.444646
    },
-   "rmse": 0.1309,
-   "r2": 0.1531,
-   "bias": -0.0222
+   "rmse": 0.1372,
+   "rmse_sd": 0.0296,
+   "rmse_upper": 0.1668,
+   "r2": 0.2252,
+   "bias": -0.0013
   },
   "maize:*": {
    "fitted": true,
-   "n": 271,
-   "n_train": 189,
-   "n_holdout": 82,
+   "n": 376,
+   "n_train": 356,
+   "n_holdout": 20,
+   "n_splits": 30,
+   "holdout_condition": "kharif",
    "features": [
     "vh_db",
     "vv_db",
     "ratio_db",
     "rvi"
    ],
-   "intercept": 0.301223,
+   "intercept": -0.042984,
    "coefficients": {
-    "vh_db": 0.007974,
-    "vv_db": -0.015815,
-    "ratio_db": 0.023789,
-    "rvi": 0.484805
+    "vh_db": -0.004889,
+    "vv_db": -0.004008,
+    "ratio_db": -0.000878,
+    "rvi": 0.534034
    },
-   "rmse": 0.1012,
-   "r2": 0.3656,
-   "bias": 0.0003
+   "rmse": 0.153,
+   "rmse_sd": 0.0189,
+   "rmse_upper": 0.1718,
+   "r2": 0.3202,
+   "bias": -0.0154
   }
  },
  "estimator": {
   "models": {
+   "cotton:germination": {
+    "features": [
+     "vh_db",
+     "vv_db",
+     "ratio_db",
+     "rvi"
+    ],
+    "intercept": 2.116311,
+    "coefficients": {
+     "vh_db": 0.049163,
+     "vv_db": -0.019188,
+     "ratio_db": 0.068352,
+     "rvi": -0.868069
+    },
+    "rmse": 0.1396,
+    "rmse_sd": 0.0216,
+    "rmse_upper": 0.1612,
+    "r2": 0.0329
+   },
    "cotton:unknown": {
     "features": [
      "vh_db",
@@ -118,15 +200,36 @@
      "ratio_db",
      "rvi"
     ],
-    "intercept": 0.850445,
+    "intercept": -0.093008,
     "coefficients": {
-     "vh_db": 0.024497,
-     "vv_db": 0.002705,
-     "ratio_db": 0.021793,
-     "rvi": 0.344339
+     "vh_db": -0.000676,
+     "vv_db": 0.027689,
+     "ratio_db": -0.028368,
+     "rvi": 0.967896
     },
-    "rmse": 0.1393,
-    "r2": 0.091
+    "rmse": 0.1862,
+    "rmse_sd": 0.0917,
+    "rmse_upper": 0.2779,
+    "r2": -0.554
+   },
+   "maize:germination": {
+    "features": [
+     "vh_db",
+     "vv_db",
+     "ratio_db",
+     "rvi"
+    ],
+    "intercept": 0.096647,
+    "coefficients": {
+     "vh_db": -0.002952,
+     "vv_db": -0.007521,
+     "ratio_db": 0.004569,
+     "rvi": 0.331095
+    },
+    "rmse": 0.1517,
+    "rmse_sd": 0.0312,
+    "rmse_upper": 0.1829,
+    "r2": -0.1953
    },
    "maize:unknown": {
     "features": [
@@ -135,15 +238,17 @@
      "ratio_db",
      "rvi"
     ],
-    "intercept": -1.482194,
+    "intercept": -1.088356,
     "coefficients": {
-     "vh_db": -0.035302,
-     "vv_db": 0.036328,
-     "ratio_db": -0.071633,
-     "rvi": 1.839786
+     "vh_db": -0.024851,
+     "vv_db": 0.027627,
+     "ratio_db": -0.052478,
+     "rvi": 1.584028
     },
-    "rmse": 0.0899,
-    "r2": 0.4916
+    "rmse": 0.1295,
+    "rmse_sd": 0.0214,
+    "rmse_upper": 0.1509,
+    "r2": 0.4729
    },
    "cotton:*": {
     "features": [
@@ -152,15 +257,17 @@
      "ratio_db",
      "rvi"
     ],
-    "intercept": -0.176759,
+    "intercept": 0.288237,
     "coefficients": {
-     "vh_db": -0.00193,
-     "vv_db": 0.029689,
-     "ratio_db": -0.031623,
-     "rvi": 1.049601
+     "vh_db": 0.003424,
+     "vv_db": 0.013953,
+     "ratio_db": -0.010525,
+     "rvi": 0.444646
     },
-    "rmse": 0.1309,
-    "r2": 0.1531
+    "rmse": 0.1372,
+    "rmse_sd": 0.0296,
+    "rmse_upper": 0.1668,
+    "r2": 0.2252
    },
    "maize:*": {
     "features": [
@@ -169,28 +276,30 @@
      "ratio_db",
      "rvi"
     ],
-    "intercept": 0.301223,
+    "intercept": -0.042984,
     "coefficients": {
-     "vh_db": 0.007974,
-     "vv_db": -0.015815,
-     "ratio_db": 0.023789,
-     "rvi": 0.484805
+     "vh_db": -0.004889,
+     "vv_db": -0.004008,
+     "ratio_db": -0.000878,
+     "rvi": 0.534034
     },
-    "rmse": 0.1012,
-    "r2": 0.3656
+    "rmse": 0.153,
+    "rmse_sd": 0.0189,
+    "rmse_upper": 0.1718,
+    "r2": 0.3202
    }
   },
-  "validated": [
-   "maize:*",
-   "maize:unknown"
-  ],
+  "validated": [],
   "rejected": {
-   "cotton:germination": "only 1 clear-day pairs, need 30",
-   "cotton:unknown": "held-out RMSE 0.1393 exceeds 0.12",
-   "cotton:vegetative": "only 3 clear-day pairs, need 30",
-   "maize:flowering": "only 3 clear-day pairs, need 30",
-   "maize:germination": "only 4 clear-day pairs, need 30",
-   "cotton:*": "held-out RMSE 0.1309 exceeds 0.12"
+   "cotton:flowering": "only 3 clear-day pairs, need 30",
+   "cotton:germination": "RMSE 0.1396\u00b10.0216 over 30 splits; upper bound 0.1612 exceeds 0.12",
+   "cotton:unknown": "RMSE 0.1862\u00b10.0917 over 30 splits; upper bound 0.2779 exceeds 0.12",
+   "cotton:vegetative": "only 6 clear-day pairs, need 30",
+   "maize:flowering": "only 6 clear-day pairs, need 30",
+   "maize:germination": "RMSE 0.1517\u00b10.0312 over 30 splits; upper bound 0.1829 exceeds 0.12",
+   "maize:unknown": "RMSE 0.1295\u00b10.0214 over 30 splits; upper bound 0.1509 exceeds 0.12",
+   "cotton:*": "RMSE 0.1372\u00b10.0296 over 30 splits; upper bound 0.1668 exceeds 0.12",
+   "maize:*": "RMSE 0.153\u00b10.0189 over 30 splits; upper bound 0.1718 exceeds 0.12"
   },
   "max_rmse": 0.12
  }

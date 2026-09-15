@@ -39,6 +39,14 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 FEATURES = ("vh_db", "vv_db", "ratio_db", "rvi")
 
+#: Months that count as Kharif in Telangana. Sowing June, harvest through
+#: October for cotton.
+KHARIF_MONTHS = {"06", "07", "08", "09", "10"}
+
+
+def is_kharif(iso_date: str) -> bool:
+    return iso_date[5:7] in KHARIF_MONTHS
+
 
 def _to_linear(db: float) -> float:
     return 10.0 ** (db / 10.0)
@@ -129,50 +137,117 @@ def _prepare(pairs: List[Dict]) -> List[Dict]:
         feats = build_features(p.get("sar_vh"), p.get("sar_vv"))
         if feats is None or p.get("ndvi") is None:
             continue
-        out.append({"crop": p["crop"], "stage": p.get("stage", "unknown"),
-                    "ndvi": p["ndvi"], "features": feats})
+        date = p.get("date") or p.get("obs_date") or ""
+        out.append({
+            "crop": p["crop"], "stage": p.get("stage", "unknown"),
+            "ndvi": p["ndvi"], "features": feats,
+            # The condition the observation was taken in, so the hold-out can be
+            # stratified by the condition the model is deployed in.
+            "condition": p.get("condition") or
+                         ("kharif" if date and is_kharif(date) else "other"),
+        })
     return out
 
 
-def _fit_group(rows, features, min_samples, holdout, rng) -> Dict:
+#: How many stratified splits to average a score over.
+#:
+#: A Kharif-only hold-out on these farms is 7 to 36 rows. One split on 23 rows
+#: produced an RMSE of 0.098 for cotton where the mean over 30 splits was 0.132 —
+#: the gate admitted a model on noise. A single split is not a measurement.
+N_SPLITS = 30
+
+
+def _fit_group(rows, features, min_samples, holdout, rng, deploy_only=None) -> Dict:
+    """deploy_only: if given, the HOLD-OUT is drawn only from rows matching it.
+
+    A random hold-out across the whole year flatters the model. Measured on
+    these six farms: a radar model evaluated on a mixed hold-out scored 0.090
+    for maize; the same model on a Kharif-only hold-out scored 0.156. The gap is
+    not noise, it is the test set quietly filling with easy clear-sky Rabi days
+    that the model will never encounter in the season it is deployed in.
+
+    So the hold-out is stratified by DEPLOYMENT CONDITION. The model may train on
+    anything; it is judged on the condition it will actually face.
+    """
     if len(rows) < min_samples:
         return {"fitted": False, "n": len(rows),
                 "reason": f"only {len(rows)} clear-day pairs, need {min_samples}"}
-    rows = rows[:]
-    rng.shuffle(rows)
-    cut = int(len(rows) * (1 - holdout))
-    train, test = rows[:cut], rows[cut:]
-    if len(train) <= len(features) + 1 or not test:
-        return {"fitted": False, "n": len(rows), "reason": "insufficient split"}
+    import statistics
 
-    coef = _fit_ols(train, features)
-    if coef is None:
-        return {"fitted": False, "n": len(rows), "reason": "singular design matrix"}
+    eligible_all = ([r for r in rows if r.get("condition") == deploy_only]
+                    if deploy_only else rows)
+    other_all = ([r for r in rows if r.get("condition") != deploy_only]
+                 if deploy_only else [])
 
-    preds = [(_predict(coef, r["features"], features), r["ndvi"]) for r in test]
+    if deploy_only and len(eligible_all) < 20:
+        return {"fitted": False, "n": len(rows),
+                "reason": (f"only {len(eligible_all)} rows in the deployment "
+                           f"condition '{deploy_only}'; need 20")}
+
+    scores, r2s, biases = [], [], []
+    last_coef, n_train, n_test = None, 0, 0
+
+    # Averaged over repeated stratified splits, because the hold-out is small
+    # enough that a single draw is luck rather than evidence.
+    for i in range(N_SPLITS):
+        srng = random.Random(4471 + i)
+        pool = eligible_all[:]
+        srng.shuffle(pool)
+        cut = int(len(pool) * (1 - holdout))
+        train, test = pool[:cut] + other_all, pool[cut:]
+        if len(train) <= len(features) + 1 or len(test) < 5:
+            continue
+        coef = _fit_ols(train, features)
+        if coef is None:
+            continue
+        preds = [(_predict(coef, r["features"], features), r["ndvi"]) for r in test]
+        scores.append(_rmse(preds))
+        r2s.append(_r2(preds))
+        biases.append(sum(p - a for p, a in preds) / len(preds))
+        last_coef, n_train, n_test = coef, len(train), len(test)
+
+    if not scores or last_coef is None:
+        return {"fitted": False, "n": len(rows), "reason": "no usable split"}
+
+    mean_rmse = statistics.mean(scores)
+    sd_rmse = statistics.pstdev(scores) if len(scores) > 1 else 0.0
+
+    # The model is finally fitted on everything, but judged on the repeated
+    # hold-out above.
+    coef = _fit_ols(eligible_all + other_all, features) or last_coef
+
     return {
-        "fitted": True, "n": len(rows), "n_train": len(train), "n_holdout": len(test),
+        "fitted": True, "n": len(rows), "n_train": n_train, "n_holdout": n_test,
+        "n_splits": len(scores),
+        "holdout_condition": deploy_only or "mixed",
         "features": list(features),
         "intercept": round(coef[0], 6),
         "coefficients": {f: round(c, 6) for f, c in zip(features, coef[1:])},
-        "rmse": round(_rmse(preds), 4),
-        "r2": round(_r2(preds), 4),
-        "bias": round(sum(p - a for p, a in preds) / len(preds), 4),
+        "rmse": round(mean_rmse, 4),
+        "rmse_sd": round(sd_rmse, 4),
+        # The figure the gate judges: one standard deviation above the mean.
+        # With hold-outs this small, passing on the mean means passing half the
+        # time by luck.
+        "rmse_upper": round(mean_rmse + sd_rmse, 4),
+        "r2": round(statistics.mean(r2s), 4),
+        "bias": round(statistics.mean(biases), 4),
     }
 
 
 def fit_per_crop_stage(pairs, min_samples: int = 30, holdout: float = 0.3,
-                       seed: int = 4471, features: Sequence[str] = FEATURES) -> Dict[str, Dict]:
+                       seed: int = 4471, features: Sequence[str] = FEATURES,
+                       deploy_only: Optional[str] = "kharif") -> Dict[str, Dict]:
     rng = random.Random(seed)
     grouped: Dict[str, List[Dict]] = defaultdict(list)
     for r in _prepare(pairs):
         grouped[f"{r['crop']}:{r['stage']}"].append(r)
-    return {k: _fit_group(v, features, min_samples, holdout, rng)
+    return {k: _fit_group(v, features, min_samples, holdout, rng, deploy_only)
             for k, v in sorted(grouped.items())}
 
 
 def fit_pooled_by_crop(pairs, min_samples: int = 30, holdout: float = 0.3,
-                       seed: int = 4471, features: Sequence[str] = FEATURES) -> Dict[str, Dict]:
+                       seed: int = 4471, features: Sequence[str] = FEATURES,
+                       deploy_only: Optional[str] = "kharif") -> Dict[str, Dict]:
     """One relation per crop, pooled across stages.
 
     Labelled `crop:*` wherever it surfaces, because backscatter responds
@@ -184,7 +259,7 @@ def fit_pooled_by_crop(pairs, min_samples: int = 30, holdout: float = 0.3,
     grouped: Dict[str, List[Dict]] = defaultdict(list)
     for r in _prepare(pairs):
         grouped[r["crop"]].append(r)
-    return {f"{k}:*": _fit_group(v, features, min_samples, holdout, rng)
+    return {f"{k}:*": _fit_group(v, features, min_samples, holdout, rng, deploy_only)
             for k, v in sorted(grouped.items())}
 
 
@@ -222,11 +297,17 @@ def to_estimator_table(results: Dict[str, Dict], max_rmse: float = 0.12) -> Dict
             continue
         models[combo] = {
             "features": r["features"], "intercept": r["intercept"],
-            "coefficients": r["coefficients"], "rmse": r["rmse"], "r2": r.get("r2"),
+            "coefficients": r["coefficients"], "rmse": r["rmse"],
+            "rmse_sd": r.get("rmse_sd"), "rmse_upper": r.get("rmse_upper"),
+            "r2": r.get("r2"),
         }
-        if r["rmse"] <= max_rmse:
+        # Judged on mean + 1 sd across repeated splits, not on one draw.
+        judged = r.get("rmse_upper", r["rmse"])
+        if judged <= max_rmse:
             validated.append(combo)
         else:
-            rejected[combo] = f"held-out RMSE {r['rmse']} exceeds {max_rmse}"
+            rejected[combo] = (
+                f"RMSE {r['rmse']}±{r.get('rmse_sd', 0)} over "
+                f"{r.get('n_splits', 1)} splits; upper bound {judged} exceeds {max_rmse}")
     return {"models": models, "validated": sorted(validated),
             "rejected": rejected, "max_rmse": max_rmse}
