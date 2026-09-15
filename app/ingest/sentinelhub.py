@@ -83,6 +83,52 @@ function evaluatePixel(s) {
 }
 """
 
+# Landsat 8/9 OLI. Different band numbers to Sentinel-2: red is B04, NIR is B05,
+# SWIR1 is B06, green is B03. The QA_PIXEL bitmask carries cloud, shadow, cirrus
+# and snow flags.
+#
+# WHY THIS EXISTS. Sentinel-2 alone revisits every 5 days. Landsat 8 and 9 pass
+# on entirely different days, so combining them roughly halves the expected gap
+# between looks. That does not beat cloud — it beats SAMPLING, which is the
+# binding constraint here: 119 clear Kharif pairs for cotton and 64 for maize is
+# too few to validate anything, and no amount of patience fixes it.
+#
+# The cost is resolution. Landsat is 30 m against Sentinel-2's 10 m, so a 0.8 ha
+# smallholder plot is a handful of pixels and is reported with that caveat. The
+# 1 km training blocks are unaffected, and they are where the sample shortage
+# actually bites.
+LANDSAT_EVALSCRIPT = """
+//VERSION=3
+function setup() {
+  return {
+    input: [{ bands: ["B03", "B04", "B05", "B06", "BQA", "dataMask"] }],
+    output: [
+      { id: "ndvi",  bands: 1, sampleType: "FLOAT32" },
+      { id: "ndwi",  bands: 1, sampleType: "FLOAT32" },
+      { id: "gci",   bands: 1, sampleType: "FLOAT32" },
+      { id: "dataMask", bands: 1 }
+    ]
+  };
+}
+
+// QA_PIXEL bits: 1 dilated cloud, 2 cirrus, 3 cloud, 4 cloud shadow, 5 snow.
+function masked(qa) {
+  var bits = [1, 2, 3, 4, 5];
+  for (var i = 0; i < bits.length; i++) {
+    if ((qa & (1 << bits[i])) !== 0) return true;
+  }
+  return false;
+}
+
+function evaluatePixel(s) {
+  var clear = (masked(s.BQA) || s.dataMask == 0) ? 0 : 1;
+  var ndvi = (s.B05 + s.B04) == 0 ? 0 : (s.B05 - s.B04) / (s.B05 + s.B04);
+  var ndwi = (s.B05 + s.B06) == 0 ? 0 : (s.B05 - s.B06) / (s.B05 + s.B06);
+  var gci  = s.B03 == 0 ? 0 : (s.B05 / s.B03) - 1;
+  return { ndvi: [ndvi], ndwi: [ndwi], gci: [gci], dataMask: [clear] };
+}
+"""
+
 S1_EVALSCRIPT = """
 //VERSION=3
 function setup() {
@@ -299,6 +345,77 @@ def fetch_optical(
 def _mean(interval: Dict[str, Any], output_id: str) -> Optional[float]:
     stats = _band_stats(interval, output_id)
     return round(stats["mean"], 4) if stats and "mean" in stats else None
+
+
+def fetch_landsat(
+    client: Client,
+    polygon: List[List[float]],
+    start: date,
+    end: date,
+    interval_days: int = 1,
+) -> List[Dict[str, Any]]:
+    """Landsat 8 and 9 surface reflectance, same outputs as the Sentinel-2 pull.
+
+    Resolution is 30 m rather than 10 m, so rows are tagged `sensor: landsat`
+    and `resolution_m: 30`. A consumer that cares — anything at smallholder
+    plot scale — can filter them out; the training blocks can use them.
+    """
+    payload = _stats_payload(
+        polygon, "landsat-ot-l2", LANDSAT_EVALSCRIPT, start, end, interval_days,
+        data_filter={"mosaickingOrder": "leastCC"},
+        resolution_m=30,
+    )
+    out: List[Dict[str, Any]] = []
+    for interval in client.statistics(payload).get("data", []):
+        if interval.get("outputs") is None:
+            continue
+        ndvi_stats = _band_stats(interval, "ndvi")
+        valid = _valid_fraction(ndvi_stats)
+        out.append({
+            "date": interval["interval"]["from"][:10],
+            "sensor": "landsat",
+            "resolution_m": 30,
+            "valid_pixel_fraction": round(valid, 4),
+            "mean_cloud_probability": round(1.0 - valid, 4),
+            "ndvi": round(ndvi_stats["mean"], 4) if ndvi_stats and valid > 0 else None,
+            "ndwi": _mean(interval, "ndwi") if valid > 0 else None,
+            "gci": _mean(interval, "gci") if valid > 0 else None,
+        })
+    return out
+
+
+def merge_optical(
+    sentinel: List[Dict[str, Any]],
+    landsat: List[Dict[str, Any]],
+    min_gap_days: int = 1,
+) -> List[Dict[str, Any]]:
+    """Combine both optical sources into one series, Sentinel-2 preferred.
+
+    Where both sensors saw the field on the same day, Sentinel-2 wins: 10 m beats
+    30 m and the cloud masks are not identical. Landsat contributes only on days
+    Sentinel-2 did not cover, which is the entire point — the gain is extra
+    LOOKS, not a better look.
+    """
+    from datetime import date as _date
+
+    merged = {r["date"]: dict(r, sensor=r.get("sensor", "sentinel2"),
+                              resolution_m=r.get("resolution_m", 10))
+              for r in sentinel}
+
+    s2_dates = sorted(_date.fromisoformat(d) for d in merged)
+    added = 0
+    for r in landsat:
+        d = _date.fromisoformat(r["date"])
+        if any(abs((d - s).days) < min_gap_days for s in s2_dates):
+            continue
+        merged[r["date"]] = r
+        added += 1
+
+    out = sorted(merged.values(), key=lambda x: x["date"])
+    for r in out:
+        r.setdefault("sensor", "sentinel2")
+        r.setdefault("resolution_m", 10)
+    return out
 
 
 def fetch_radar(

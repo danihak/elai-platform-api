@@ -377,6 +377,383 @@ def cmd_nisar_check() -> int:
     return 0
 
 
+def cmd_landsat_test(days: int = 730) -> int:
+    """Does adding Landsat actually increase CLEAR KHARIF reads?
+
+    That is the only question worth asking. More passes is not the goal; more
+    passes that see something is. Measured on the training blocks, where the
+    30 m resolution is not a problem and where the Kharif sample shortage is the
+    binding constraint on every model we have tried to validate.
+
+    The test is deliberately cheap and reversible: if the extra clear Kharif
+    reads are few, we drop Landsat and say so, rather than carrying a second
+    sensor for a gain nobody measured.
+    """
+    from .ingest.sentinelhub import (Client, SentinelHubError, fetch_landsat,
+                                     fetch_optical, merge_optical)
+    from .ingest.training_aois import TRAINING_AOIS
+
+    try:
+        client = Client.from_env()
+    except SentinelHubError as exc:
+        print(exc, file=sys.stderr)
+        return 1
+
+    end = date(2026, 9, 6)
+    start = end - timedelta(days=days)
+    KH = {"06", "07", "08", "09", "10"}
+
+    def kharif_clear(rows):
+        return sum(1 for r in rows
+                   if r["date"][5:7] in KH and r.get("valid_pixel_fraction", 0) >= 0.80)
+
+    print(f"Landsat as a second optical source, {start} to {end}")
+    print("Measured on the training blocks. Clear = at least 80% valid pixels.\n")
+
+    tot_s2 = tot_ls = tot_merged = 0
+    tot_s2_k = tot_merged_k = 0
+
+    for aoi in TRAINING_AOIS[:4]:   # four blocks is enough to decide
+        poly = [[x, y] for x, y in aoi.polygon]
+        try:
+            s2 = fetch_optical(client, poly, start, end, interval_days=1)
+            ls = fetch_landsat(client, poly, start, end, interval_days=1)
+        except SentinelHubError as exc:
+            print(f"  {aoi.aoi_id} FAILED: {str(exc)[:200]}", file=sys.stderr)
+            return 1
+
+        merged = merge_optical(s2, ls)
+        s2k, mk = kharif_clear(s2), kharif_clear(merged)
+        tot_s2 += len(s2); tot_ls += len(ls); tot_merged += len(merged)
+        tot_s2_k += s2k; tot_merged_k += mk
+
+        gain = f"+{mk - s2k}" if mk > s2k else "0"
+        print(f"  {aoi.aoi_id} {aoi.crop:7}  S2 {len(s2):4} passes / {s2k:3} clear kharif   "
+              f"+LS {len(ls):4}  ->  merged {len(merged):4} / {mk:3} clear kharif  ({gain})")
+
+    print()
+    print(f"  Sentinel-2 alone   {tot_s2:5} passes, {tot_s2_k:4} clear Kharif reads")
+    print(f"  With Landsat       {tot_merged:5} passes, {tot_merged_k:4} clear Kharif reads")
+    if tot_s2_k:
+        lift = 100 * (tot_merged_k - tot_s2_k) / tot_s2_k
+        print(f"  Lift in the reads that matter: {lift:+.0f}%")
+        print()
+        if lift >= 25:
+            print("  WORTH IT. Add Landsat to the training pull. The gain is in")
+            print("  Kharif clear reads, which is the constraint on every model.")
+        elif lift >= 10:
+            print("  MARGINAL. Worth it for the 1 km training blocks, not for")
+            print("  0.6-1.4 ha farms where 30 m pixels are only a handful.")
+        else:
+            print("  NOT WORTH IT. Drop Landsat and record that it was measured")
+            print("  rather than assumed. Clouds block both sensors on the same")
+            print("  days more often than the different orbits suggest.")
+    return 0
+
+
+def cmd_nisar_pull_h5(days: int = 120, farms: int = 2, granules: int = 6) -> int:
+    """NISAR L-band over our farms with no GDAL and no rasterio.
+
+    The openSEPPO route needs rasterio, rasterio needs GDAL, and GDAL's DLLs are
+    blocked by endpoint security on this machine. Rather than fight a device
+    policy, this removes the dependency: GCOV is geocoded HDF5, so h5py can open
+    it over HTTPS and slice the window covering a farm directly. An 8 GB granule
+    costs kilobytes.
+    """
+    from .ingest.nisar import TELANGANA_BBOX, check as nisar_search_check
+    from .ingest.nisar_h5 import sample_farm
+    from .seed import FARMS
+
+    try:
+        import h5py, fsspec  # noqa: F401
+    except ImportError as exc:
+        print(f"needs h5py and fsspec: {exc}", file=sys.stderr)
+        return 1
+
+    token = None
+    tok = pathlib.Path.home() / ".cache" / "openseppo" / "earthaccess_token.json"
+    if tok.exists():
+        try:
+            token = json.loads(tok.read_text()).get("access_token")
+        except Exception:  # noqa: BLE001
+            pass
+    if not token:
+        print("No Earthdata bearer token found.")
+        print("Register at https://urs.earthdata.nasa.gov, then run:")
+        print("  seppo_earthaccess_credentials -t")
+        return 1
+
+    end = date(2026, 9, 6)
+    start = end - timedelta(days=days)
+
+    # Reuse the search that already works — it needs no GDAL.
+    import asf_search as asf
+    wkt = (f"POLYGON(({TELANGANA_BBOX['min_lon']} {TELANGANA_BBOX['min_lat']},"
+           f"{TELANGANA_BBOX['max_lon']} {TELANGANA_BBOX['min_lat']},"
+           f"{TELANGANA_BBOX['max_lon']} {TELANGANA_BBOX['max_lat']},"
+           f"{TELANGANA_BBOX['min_lon']} {TELANGANA_BBOX['max_lat']},"
+           f"{TELANGANA_BBOX['min_lon']} {TELANGANA_BBOX['min_lat']}))")
+    results = asf.search(dataset="NISAR", processingLevel="GCOV",
+                         intersectsWith=wkt, start=start.isoformat(),
+                         end=end.isoformat(), maxResults=granules)
+    urls = [r.properties["url"] for r in results if r.properties.get("url")]
+    print(f"{len(urls)} GCOV granules over the AOI, {start} to {end}\n")
+
+    out = {"as_of": end.isoformat(), "source": "nisar-l-gcov-h5", "farms": {}}
+    for farm in FARMS[:farms]:
+        print(f"{farm.farm_id}  {farm.farm_name} ({farm.crop}, {farm.area_ha} ha)")
+        rows = []
+        for url in urls:
+            name = url.rsplit("/", 1)[-1].replace(".h5", "")
+            parts = name.split("_")
+            acq = parts[11][:8] if len(parts) > 11 else ""
+            iso = f"{acq[:4]}-{acq[4:6]}-{acq[6:8]}" if len(acq) == 8 else ""
+
+            stats, note = sample_farm(url, farm.polygon, token=token)
+            if stats is None:
+                print(f"   {iso or name[:24]}  {note[:90]}")
+                continue
+            hh = stats.get("HHHH", {}).get("mean_db")
+            hv = stats.get("HVHV", {}).get("mean_db")
+            px = max(s.get("pixels", 0) for s in stats.values())
+            ratio = f"{hv - hh:+.2f}" if hh is not None and hv is not None else "  n/a"
+            print(f"   {iso}  HH {hh if hh is None else round(hh,2):>8}  "
+                  f"HV {hv if hv is None else round(hv,2):>8}  "
+                  f"ratio {ratio}  {px:5} px   {note[:40]}")
+            rows.append({"date": iso, "sensor": "nisar_l",
+                         "sar_vv": hh, "sar_vh": hv,
+                         "radar_sources": ["nisar_l"], "pixels": px,
+                         "granule": name})
+        out["farms"][farm.farm_id] = rows
+        print()
+
+    path = DATA / "nisar.json"
+    path.write_text(json.dumps(out, indent=1), encoding="utf-8")
+    total = sum(len(v) for v in out["farms"].values())
+    print(f"wrote {path} — {total} L-band observations")
+    if total:
+        px = [r["pixels"] for v in out["farms"].values() for r in v]
+        med = sorted(px)[len(px) // 2]
+        print(f"pixels per farm per pass: min {min(px)}, median {med}, max {max(px)}")
+        print()
+        if med < 10:
+            print("TOO FEW PIXELS. At 20 m posting a smallholder plot is a handful")
+            print("of cells, and a mean over that is not a measurement. The unit of")
+            print("analysis has to move to village or mandal before L-band is used.")
+        else:
+            print("Enough pixels per plot to average meaningfully. Next: pull the")
+            print("full season and fit L-band against the same Kharif-stratified")
+            print("gate as everything else.")
+    return 0
+
+
+def cmd_nisar_season(granules: int = 60) -> int:
+    """Full available NISAR season over every farm, then RVI, health and a fit.
+
+    NISAR L-band opened on 17 June 2026, so the available window is that date to
+    now. Everything is reported in order of how strongly it can be claimed: the
+    series first, then the coincidences with optical, then a model only if the
+    coincidences support one.
+    """
+    from .ingest.nisar import TELANGANA_BBOX
+    from .ingest.nisar_h5 import sample_farm
+    from .ingest.nisar_season import (LBandObservation, assess_health,
+                                      find_coincidences, fit_lband_to_ndvi)
+    from .seed import FARMS
+
+    tok = pathlib.Path.home() / ".cache" / "openseppo" / "earthaccess_token.json"
+    token = None
+    if tok.exists():
+        try:
+            token = json.loads(tok.read_text()).get("access_token")
+        except Exception:  # noqa: BLE001
+            pass
+    if not token:
+        print("No Earthdata token. Run: seppo_earthaccess_credentials -t", file=sys.stderr)
+        return 1
+
+    import asf_search as asf
+    b = TELANGANA_BBOX
+    wkt = (f"POLYGON(({b['min_lon']} {b['min_lat']},{b['max_lon']} {b['min_lat']},"
+           f"{b['max_lon']} {b['max_lat']},{b['min_lon']} {b['max_lat']},"
+           f"{b['min_lon']} {b['min_lat']}))")
+
+    start, end = date(2026, 6, 17), date(2026, 9, 6)
+    results = asf.search(dataset="NISAR", processingLevel="GCOV",
+                         intersectsWith=wkt, start=start.isoformat(),
+                         end=end.isoformat(), maxResults=granules)
+    urls = [r.properties["url"] for r in results if r.properties.get("url")]
+    print(f"NISAR L-band, {start} to {end}: {len(urls)} GCOV granules over the AOI")
+    print("Reading each farm's window straight from S3 — nothing is downloaded.\n")
+
+    optical = {}
+    for name in ("observations.json", "history.json"):
+        f = DATA / name
+        if f.exists():
+            for fid, rows in json.loads(f.read_text(encoding="utf-8"))["farms"].items():
+                optical.setdefault(fid, []).extend(rows)
+
+    series: Dict[str, List] = {}
+    for farm in FARMS:
+        rows = []
+        for url in urls:
+            parts = url.rsplit("/", 1)[-1].replace(".h5", "").split("_")
+            acq = parts[11][:8] if len(parts) > 11 else ""
+            iso = f"{acq[:4]}-{acq[4:6]}-{acq[6:8]}" if len(acq) == 8 else ""
+            stats, _note = sample_farm(url, farm.polygon, token=token)
+            if not stats:
+                continue
+            hh = stats.get("HHHH", {}).get("mean_db")
+            hv = stats.get("HVHV", {}).get("mean_db")
+            if hh is None or hv is None:
+                continue
+            rows.append(LBandObservation(
+                farm_id=farm.farm_id, date=iso, hh_db=hh, hv_db=hv,
+                pixels=max(s.get("pixels", 0) for s in stats.values()),
+                granule="_".join(parts[:12]),
+            ))
+        series[farm.farm_id] = sorted(rows, key=lambda r: r.date)
+        got = len(rows)
+        print(f"  {farm.farm_id} {farm.crop:7} {got:3} usable of {len(urls)} granules"
+              f"   ({100*got/max(len(urls),1):.0f}% on-swath with valid backscatter)")
+
+    print()
+    print("L-band vegetation index over the season")
+    print("  RVI = 4*HV/(HH+HV) in linear power. Rises as a canopy gains volume")
+    print("  structure, falls at senescence, and is measured through cloud.\n")
+    for fid, rows in series.items():
+        if not rows:
+            continue
+        strip = "  ".join(f"{r.date[5:]}:{r.rvi:.3f}" for r in rows if r.rvi is not None)
+        print(f"  {fid}  {strip}")
+
+    print()
+    print("Crop health, from the series alone")
+    print("  Direction and peer deviation. Not a yield and not a stress percentage —")
+    print("  those need calibration against ground truth that does not exist yet.\n")
+    for farm in FARMS:
+        h = assess_health(farm.farm_id, series.get(farm.farm_id, []), series)
+        if h is None:
+            print(f"  {farm.farm_id}  no usable L-band reads")
+            continue
+        dev = f"{h.deviation:+.3f}" if h.deviation is not None else "n/a"
+        print(f"  {farm.farm_id} {farm.crop:7} RVI {h.rvi:.3f}  vs peers {dev}  "
+              f"-> {h.verdict}")
+        print(f"  {'':12} {h.basis}")
+
+    print()
+    print("Coincidences with clear optical — the only rows that can calibrate L-band")
+    all_pairs = []
+    for farm in FARMS:
+        pairs = find_coincidences(series.get(farm.farm_id, []),
+                                  optical.get(farm.farm_id, []))
+        all_pairs.extend(pairs)
+        print(f"  {farm.farm_id}  {len(pairs)} pairs")
+
+    print()
+    fit = fit_lband_to_ndvi(all_pairs)
+    if fit["fitted"]:
+        print(f"L-band to NDVI: rmse {fit['rmse']}±{fit['rmse_sd']}  "
+              f"upper {fit['rmse_upper']}  r2 {fit['r2']:+.3f}  "
+              f"n={fit['n']} over {fit['n_splits']} splits")
+        print("  " + "  ".join(f"{k}={v:+.4f}" for k, v in fit["coefficients"].items()))
+        verdict = "PASSES" if fit["rmse_upper"] <= 0.12 else "FAILS"
+        print(f"  Against the 0.12 ceiling on the upper bound: {verdict}")
+    else:
+        print(f"NO FIT: {fit['reason']}")
+        print()
+        print("  That is the honest result, not a failure. The series and the health")
+        print("  reading above stand on their own — they are measurements. A model")
+        print("  mapping L-band to NDVI needs a Kharif with more coincident clear")
+        print("  optical days than this one had.")
+
+    out = {
+        "as_of": end.isoformat(), "source": "nisar-l-gcov",
+        "granules_searched": len(urls),
+        "farms": {fid: [{"date": r.date, "hh_db": r.hh_db, "hv_db": r.hv_db,
+                         "ratio_db": r.ratio_db, "rvi": r.rvi, "pixels": r.pixels}
+                        for r in rows] for fid, rows in series.items()},
+        "coincidences": all_pairs,
+        "fit": fit,
+    }
+    path = DATA / "nisar_season.json"
+    path.write_text(json.dumps(out, indent=1), encoding="utf-8")
+    print(f"\nwrote {path}")
+    return 0
+
+
+def cmd_nisar_env() -> int:
+    """What is installed, and is there an Earthdata login."""
+    from .ingest.nisar_ingest import check_environment
+
+    env = check_environment()
+    print("NISAR ingest environment\n")
+    for k, v in env.items():
+        if k == "ready":
+            continue
+        print(f"  {'OK ' if v else '-- '} {k}")
+    print()
+    if env["ready"]:
+        print("Ready. Next: python -m app.cli nisar-pull")
+    else:
+        print("Not ready. Install:")
+        print("  pip install openseppo rasterio xarray h5py earthaccess")
+        if not env["netrc_has_earthdata"]:
+            print()
+            print("And add an Earthdata login. Register free at")
+            print("  https://urs.earthdata.nasa.gov")
+            print("then run: seppo_earthaccess_credentials -t")
+    return 0 if env["ready"] else 1
+
+
+def cmd_nisar_pull(days: int = 120, farms: int = 2) -> int:
+    """Subset L-band over a couple of farms and report what came back.
+
+    Deliberately two farms, not six. The question is whether the pipeline
+    produces usable backscatter over a smallholder plot at all — 20 m posting
+    against a 0.8 ha field is a handful of pixels, and if that handful is too
+    few the whole approach needs a different unit of analysis, which is worth
+    finding out before pulling twenty granules.
+    """
+    from .ingest.nisar_ingest import check_environment, ingest_farm
+    from .seed import FARMS
+
+    env = check_environment()
+    if not env["ready"]:
+        print("Environment not ready. Run: python -m app.cli nisar-env", file=sys.stderr)
+        return 1
+
+    end = date(2026, 9, 6)
+    start = end - timedelta(days=days)
+    out = {"as_of": end.isoformat(), "source": "nisar-l-gcov", "farms": {}}
+
+    for farm in FARMS[:farms]:
+        print(f"\n{farm.farm_id}  {farm.farm_name} ({farm.crop})")
+        rows, notes = ingest_farm(farm.farm_id, farm.polygon, start, end)
+        for n in notes:
+            print(f"   {n}")
+        for r in rows:
+            ratio = f"{r.ratio_db:+.2f}" if r.ratio_db is not None else "  n/a"
+            print(f"   {r.date}  HH {r.hh_db:7.2f}  HV {r.hv_db:7.2f}  "
+                  f"ratio {ratio}  {r.pixels:5} px")
+        out["farms"][farm.farm_id] = [r.as_pair_row() for r in rows]
+
+    path = DATA / "nisar.json"
+    path.write_text(json.dumps(out, indent=1), encoding="utf-8")
+    total = sum(len(v) for v in out["farms"].values())
+    print(f"\nwrote {path} — {total} L-band observations")
+    if total == 0:
+        print("Nothing came back. That is a result, not a failure: report it.")
+    else:
+        px = [r["pixels"] for v in out["farms"].values() for r in v]
+        print(f"pixels per farm per pass: min {min(px)}, median "
+              f"{sorted(px)[len(px)//2]}, max {max(px)}")
+        print("A mean over very few pixels is not the same measurement as a mean")
+        print("over many. If these counts are single digits, the unit of analysis")
+        print("has to change before the data is used.")
+    return 0
+
+
 def cmd_nisar_feasibility() -> int:
     from .ingest.nisar import feasibility
     return feasibility()
@@ -463,6 +840,11 @@ def main() -> int:
         "ingest": cmd_ingest,
         "history": lambda: cmd_ingest(history=True),
         "train-pull": cmd_train_pull,
+        "landsat-test": cmd_landsat_test,
+        "nisar-env": cmd_nisar_env,
+        "nisar-pull": cmd_nisar_pull,
+        "nisar-pull-h5": cmd_nisar_pull_h5,
+        "nisar-season": cmd_nisar_season,
         "nisar-check": cmd_nisar_check,
         "nisar-inspect": cmd_nisar_inspect,
         "nisar-feasibility": cmd_nisar_feasibility,

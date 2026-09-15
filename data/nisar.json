@@ -1,0 +1,54 @@
+{
+ "as_of": "2026-09-06",
+ "source": "nisar-l-gcov-h5",
+ "farms": {
+  "TS-MZ-0044": [
+   {
+    "date": "2026-09-05",
+    "sensor": "nisar_l",
+    "sar_vv": -7.541479440894039,
+    "sar_vh": -17.210103449981116,
+    "radar_sources": [
+     "nisar_l"
+    ],
+    "pixels": 169,
+    "granule": "NISAR_L2_PR_GCOV_029_156_A_011_4005_DHDH_A_20260905T000948_20260905T001022_P05023_N_F_J_001"
+   },
+   {
+    "date": "2026-08-30",
+    "sensor": "nisar_l",
+    "sar_vv": -8.564269318740344,
+    "sar_vh": -17.8648284600908,
+    "radar_sources": [
+     "nisar_l"
+    ],
+    "pixels": 72,
+    "granule": "NISAR_L2_PR_GCOV_029_077_D_079_2005_QPDH_A_20260830T131738_20260830T131813_P05023_N_F_J_001"
+   }
+  ],
+  "TS-MZ-0051": [
+   {
+    "date": "2026-09-05",
+    "sensor": "nisar_l",
+    "sar_vv": -7.51858164820595,
+    "sar_vh": -17.41743859857713,
+    "radar_sources": [
+     "nisar_l"
+    ],
+    "pixels": 225,
+    "granule": "NISAR_L2_PR_GCOV_029_156_A_011_4005_DHDH_A_20260905T000948_20260905T001022_P05023_N_F_J_001"
+   },
+   {
+    "date": "2026-08-30",
+    "sensor": "nisar_l",
+    "sar_vv": -7.681469243884949,
+    "sar_vh": -16.67131643711227,
+    "radar_sources": [
+     "nisar_l"
+    ],
+    "pixels": 90,
+    "granule": "NISAR_L2_PR_GCOV_029_077_D_079_2005_QPDH_A_20260830T131738_20260830T131813_P05023_N_F_J_001"
+   }
+  ]
+ }
+}
