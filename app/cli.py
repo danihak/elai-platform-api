@@ -354,6 +354,24 @@ def cmd_train_pull(days: int = 730) -> int:
     return 0
 
 
+def cmd_nisar_check() -> int:
+    """Metadata-only. Answers whether NISAR L-band exists over our districts."""
+    from .ingest.nisar import check, report
+
+    report(check())
+    return 0
+
+
+def cmd_nisar_feasibility() -> int:
+    from .ingest.nisar import feasibility
+    return feasibility()
+
+
+def cmd_nisar_inspect() -> int:
+    from .ingest.nisar import inspect
+    return inspect()
+
+
 def _fusion_truth_points(series_by_field, radar_sigma):
     """Held-out points for calibrating the fusion.
 
@@ -430,6 +448,9 @@ def main() -> int:
         "ingest": cmd_ingest,
         "history": lambda: cmd_ingest(history=True),
         "train-pull": cmd_train_pull,
+        "nisar-check": cmd_nisar_check,
+        "nisar-inspect": cmd_nisar_inspect,
+        "nisar-feasibility": cmd_nisar_feasibility,
         "fit": cmd_fit,
         "status": cmd_status,
     }.get(cmd, lambda: (print(__doc__), 1)[1])()

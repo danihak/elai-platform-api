@@ -9,6 +9,7 @@ from fastapi import APIRouter, HTTPException, Query
 from elai_confidence_core import derive
 
 from ..seed import yield_estimate
+from ..services.stress import assess, explain_weights
 from ..store.repository import repo
 from ._shapes import FarmOut, MetricOut, ObservationOut
 
@@ -65,12 +66,16 @@ def farm_state(farm_id: str) -> dict:
         raise HTTPException(409, "no observations for this farm")
 
     point = yield_estimate(f, repo.raw_observations(farm_id)[-1])
+    stress = assess(latest, f.crop)
+
     metrics = [
         derive("predicted_productivity", point, [latest], unit="MT/ha"),
         derive("predicted_total_yield", round(point * f.area_ha, 2), [latest], unit="MT"),
         derive("vegetation_ndvi", latest.ndvi, [latest]),
-        derive("area_under_stress", None if latest.ndvi is None else round(f.area_ha * 0.18, 2),
-               [latest], unit="ha"),
+        # Stress is now computed from stage-weighted indices rather than a
+        # hardcoded fraction of the field. The previous version returned
+        # area_ha * 0.18 for every farm on every date.
+        derive("stress_score", stress.score, [latest]),
     ]
 
     return {
@@ -81,6 +86,26 @@ def farm_state(farm_id: str) -> dict:
         "state": latest.state,
         "observation": ObservationOut.of(latest),
         "metrics": [MetricOut.of(m) for m in metrics],
+        "stress": {
+            "band": stress.band,
+            "score": stress.score,
+            "driving_index": stress.driving_index,
+            "state": stress.state,
+            "stage": stress.stage,
+            "reason": stress.reason,
+            "weight_covered": stress.weight_covered,
+            "suppressed_indices": stress.suppressed,
+            "unavailable_indices": stress.unavailable,
+            "contributions": [
+                {
+                    "index": c.index, "value": c.value, "stage_weight": c.weight,
+                    "severity": round(c.severity, 3), "direction": c.direction,
+                    "healthy": c.threshold[0], "stressed": c.threshold[1],
+                }
+                for c in sorted(stress.contributions,
+                                key=lambda c: -(c.weight * c.severity))
+            ],
+        },
         "rule_version": latest.rule_version,
     }
 
@@ -103,3 +128,21 @@ def farm_ledger(farm_id: str) -> List[dict]:
     if not repo.farm(farm_id):
         raise HTTPException(404, "farm not found")
     return repo.ledger(farm_id)
+
+
+
+@router.get("/{farm_id}/stage-weights", summary="How indices are weighted at this stage")
+def stage_weights(farm_id: str) -> dict:
+    """Krupa's question, answered as data rather than as a slide.
+
+    "How does the relative importance of different stress indices get weighted
+    by growth stage?" — this endpoint returns the live weighting for the farm's
+    crop at its current stage, with each threshold and its sign-off status.
+    """
+    f = repo.farm(farm_id)
+    if not f:
+        raise HTTPException(404, "farm not found")
+    latest = repo.latest(farm_id)
+    if latest is None:
+        raise HTTPException(409, "no observations for this farm")
+    return explain_weights(f.crop, latest.stage)
