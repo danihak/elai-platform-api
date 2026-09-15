@@ -602,6 +602,73 @@ def cmd_eval_chatbot() -> int:
     return 0 if out["may_ship"] else 1
 
 
+def cmd_nisar_health() -> int:
+    """Recompute the health reading from data already on disk. No S3 reads.
+
+    The season pull takes roughly two hours because every granule is opened over
+    HTTPS. The geometry and granule name are now stored in nisar_season.json, so
+    every downstream question — trends, peer comparison, cross-geometry
+    agreement — can be answered from the file. Re-pulling to change a verdict
+    rule would be wasting two hours to re-download data that has not changed.
+    """
+    from .ingest.nisar_season import (LBandObservation, assess_health,
+                                      dominant_geometry, split_by_geometry)
+
+    path = DATA / "nisar_season.json"
+    if not path.exists():
+        print(f"{path} not found. Run: python -m app.cli nisar-season", file=sys.stderr)
+        return 1
+
+    blob = json.loads(path.read_text(encoding="utf-8"))
+    series = {
+        fid: [LBandObservation(farm_id=fid, date=r["date"], hh_db=r["hh_db"],
+                               hv_db=r["hv_db"], pixels=r.get("pixels", 0),
+                               granule=r.get("granule", ""))
+              for r in rows]
+        for fid, rows in blob["farms"].items()
+    }
+
+    print(f"Recomputed from {path.name} — no granules were read.\n")
+    print("L-band series by acquisition geometry\n")
+    for fid, rows in series.items():
+        groups = split_by_geometry(rows)
+        dom = dominant_geometry(rows)
+        for g, obs in groups.items():
+            strip = "  ".join(f"{o.date[5:]}:{o.rvi:.3f}" for o in obs if o.rvi is not None)
+            print(f"  {fid} {'*' if g == dom else ' '}{g}  {strip}")
+        print()
+
+    print("Crop health · a comparative verdict now requires agreement across")
+    print("every geometry with enough reads.\n")
+    print("  One farm reads 0.10 descending and 0.79 ascending, both stable. It")
+    print("  is not stressed — it scatters strongly in one look direction. Judged")
+    print("  on the dominant track alone it scored -0.348 and was called 'below")
+    print("  neighbours', which would have sent an officer to a healthy field.\n")
+
+    for fid in series:
+        h = assess_health(fid, series[fid], series)
+        if h is None:
+            print(f"  {fid}  no usable reads")
+            continue
+        dev = f"{h.deviation:+.3f}" if h.deviation is not None else "  n/a"
+        print(f"  {fid}  RVI {h.rvi:.3f}  vs peers {dev}  ->  {h.verdict}")
+        print(f"     {h.basis}")
+        print()
+
+    out = DATA / "nisar_health.json"
+    out.write_text(json.dumps({
+        "recomputed_from": path.name,
+        "rule": "a comparative verdict requires agreement across geometries",
+        "farms": {fid: (lambda h: None if h is None else {
+            "rvi": h.rvi, "geometry": h.basis.split("geometry ")[-1].split(";")[0],
+            "trend_per_day": h.trend_per_day, "peer_median": h.peer_median,
+            "deviation": h.deviation, "verdict": h.verdict, "basis": h.basis,
+        })(assess_health(fid, series[fid], series)) for fid in series},
+    }, indent=1), encoding="utf-8")
+    print(f"wrote {out}")
+    return 0
+
+
 def cmd_nisar_season(granules: int = 60) -> int:
     """Full available NISAR season over every farm, then RVI, health and a fit.
 
@@ -915,6 +982,7 @@ def main() -> int:
         "nisar-pull-h5": cmd_nisar_pull_h5,
         "eval-chatbot": cmd_eval_chatbot,
         "nisar-season": cmd_nisar_season,
+        "nisar-health": cmd_nisar_health,
         "nisar-check": cmd_nisar_check,
         "nisar-inspect": cmd_nisar_inspect,
         "nisar-feasibility": cmd_nisar_feasibility,

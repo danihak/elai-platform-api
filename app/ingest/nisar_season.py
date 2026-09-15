@@ -197,6 +197,7 @@ def assess_health(
     series: List[LBandObservation],
     peers: Dict[str, List[LBandObservation]],
     window: int = 3,
+    require_agreement: bool = True,
 ) -> Optional[HealthReading]:
     """Direction and deviation, not a yield or a stress percentage.
 
@@ -253,18 +254,52 @@ def assess_health(
         peer_median = peer_vals[len(peer_vals) // 2]
         deviation = latest_rvi - peer_median
 
+    # CROSS-GEOMETRY AGREEMENT.
+    #
+    # Separating the series stopped a farm looking like it collapsed every six
+    # days, but it did not stop a second error: one farm reads 0.10 on the
+    # descending track and 0.79 on the ascending one, both perfectly stable. It
+    # is not stressed — it scatters strongly in one look direction, most likely
+    # because its rows align with that geometry. Judged on the dominant track
+    # alone it scored -0.348 against its peers and was called "below
+    # neighbours", which would have sent a field officer to a healthy field.
+    #
+    # So a comparative verdict now requires the SAME finding on every geometry
+    # that has enough data. A claim that holds from one angle and not the other
+    # is a claim about the angle.
+    agreement = _agreement(farm_id, series, peers, window)
+
     if deviation is not None and deviation < -0.06:
-        verdict = "below neighbours"
+        verdict = ("below neighbours" if agreement.get("below")
+                   else "inconclusive — geometries disagree")
     elif deviation is not None and deviation > 0.06:
-        verdict = "above neighbours"
+        verdict = ("above neighbours" if agreement.get("above")
+                   else "inconclusive — geometries disagree")
     elif trend is not None and trend < -0.004:
-        verdict = "canopy declining"
+        verdict = ("canopy declining" if agreement.get("declining", True)
+                   else "inconclusive — geometries disagree")
     elif trend is not None and trend > 0.004:
-        verdict = "canopy developing"
+        verdict = ("canopy developing" if agreement.get("developing", True)
+                   else "inconclusive — geometries disagree")
     else:
         verdict = "steady"
 
     basis_bits = [f"{len(pts)} L-band reads on geometry {geom}"]
+
+    # Only report the agreement check when a comparative verdict was actually
+    # attempted. Saying "not confirmed across geometries" beneath a verdict of
+    # "steady" implies a claim was tested and failed, when none was made.
+    claimed = verdict not in ("steady",)
+    if agreement.get("checked") and claimed:
+        basis_bits.append(
+            "confirmed on " + " and ".join(agreement["geometries"])
+            if "inconclusive" not in verdict
+            else "the finding holds on "
+                 + agreement["geometries"][0] + " but not on "
+                 + agreement["geometries"][-1])
+    elif agreement.get("checked"):
+        basis_bits.append(
+            "checked on " + " and ".join(agreement["geometries"]))
     if trend is not None:
         basis_bits.append(f"trend {trend:+.4f} RVI/day")
     if peer_median is not None:
@@ -285,6 +320,75 @@ def assess_health(
 # --------------------------------------------------------------------------
 # Fitting, only if the evidence supports it
 # --------------------------------------------------------------------------
+
+
+def _agreement(
+    farm_id: str,
+    series: List[LBandObservation],
+    peers: Dict[str, List[LBandObservation]],
+    window: int,
+) -> Dict[str, object]:
+    """Does the same finding hold on every geometry with enough data.
+
+    Returns flags for each verdict type, plus what was checked. A farm with only
+    one usable geometry returns `checked: False` and the caller falls back to
+    the single-geometry reading — stated, not silently.
+    """
+    groups = split_by_geometry(series)
+    usable = {g: o for g, o in groups.items()
+              if len([x for x in o if x.rvi is not None]) >= 3}
+    if len(usable) < 2:
+        return {"checked": False, "below": True, "above": True,
+                "declining": True, "developing": True,
+                "why": "only one geometry has enough reads"}
+
+    below, above, declining, developing = [], [], [], []
+
+    for geom, obs in usable.items():
+        pts = [(o.date, o.rvi) for o in sorted(obs, key=lambda x: x.date)
+               if o.rvi is not None]
+        latest_date, latest = pts[-1]
+
+        peer_vals: List[float] = []
+        for pid, plist in peers.items():
+            if pid == farm_id:
+                continue
+            for o in plist:
+                if o.geometry != geom or o.rvi is None or not o.date:
+                    continue
+                gap = abs((date.fromisoformat(o.date)
+                           - date.fromisoformat(latest_date)).days)
+                if gap <= 8:
+                    peer_vals.append(o.rvi)
+
+        if len(peer_vals) >= 2:
+            peer_vals.sort()
+            med = peer_vals[len(peer_vals) // 2]
+            below.append(latest - med < -0.06)
+            above.append(latest - med > 0.06)
+
+        recent = pts[-window:] if len(pts) >= window else pts
+        days = (date.fromisoformat(recent[-1][0])
+                - date.fromisoformat(recent[0][0])).days
+        if days > 0:
+            slope = (recent[-1][1] - recent[0][1]) / days
+            declining.append(slope < -0.004)
+            developing.append(slope > 0.004)
+
+    def all_true(xs):
+        return bool(xs) and all(xs)
+
+    return {
+        "checked": True,
+        "geometries": sorted(usable),
+        "below": all_true(below),
+        "above": all_true(above),
+        "declining": all_true(declining),
+        "developing": all_true(developing),
+        "confirmed": any([all_true(below), all_true(above),
+                          all_true(declining), all_true(developing)]),
+        "why": "the finding holds on one geometry but not the other",
+    }
 
 
 def fit_lband_to_ndvi(

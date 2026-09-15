@@ -1,0 +1,60 @@
+{
+ "recomputed_from": "nisar_season.json",
+ "rule": "a comparative verdict requires agreement across geometries",
+ "farms": {
+  "TS-MZ-0044": {
+   "rvi": 0.4205003920561864,
+   "geometry": "077D",
+   "trend_per_day": -0.0184909843196391,
+   "peer_median": 0.4481926061219749,
+   "deviation": -0.027692214065788534,
+   "verdict": "canopy declining",
+   "basis": "7 L-band reads on geometry 077D; confirmed on 077D and 156A; trend -0.0185 RVI/day; 5 peer reads, median 0.448"
+  },
+  "TS-MZ-0051": {
+   "rvi": 0.4481926061219749,
+   "geometry": "077D",
+   "trend_per_day": -0.004588577953680048,
+   "peer_median": 0.4205003920561864,
+   "deviation": 0.027692214065788534,
+   "verdict": "inconclusive \u2014 geometries disagree",
+   "basis": "7 L-band reads on geometry 077D; the finding holds on 077D but not on 156A; trend -0.0046 RVI/day; 5 peer reads, median 0.421"
+  },
+  "TS-MZ-0063": {
+   "rvi": 0.10004935788576852,
+   "geometry": "077D",
+   "trend_per_day": -0.0012194891718976645,
+   "peer_median": 0.4481926061219749,
+   "deviation": -0.3481432482362064,
+   "verdict": "inconclusive \u2014 geometries disagree",
+   "basis": "7 L-band reads on geometry 077D; the finding holds on 077D but not on 156A; trend -0.0012 RVI/day; 5 peer reads, median 0.448"
+  },
+  "TS-CT-0107": {
+   "rvi": 0.47802516438720516,
+   "geometry": "077D",
+   "trend_per_day": -0.0012155523332508815,
+   "peer_median": 0.4205003920561864,
+   "deviation": 0.05752477233101877,
+   "verdict": "steady",
+   "basis": "6 L-band reads on geometry 077D; checked on 077D and 156A; trend -0.0012 RVI/day; 5 peer reads, median 0.421"
+  },
+  "TS-CT-0119": {
+   "rvi": 0.5075758461638588,
+   "geometry": "077D",
+   "trend_per_day": -0.0009646793007946445,
+   "peer_median": 0.4205003920561864,
+   "deviation": 0.08707545410767237,
+   "verdict": "inconclusive \u2014 geometries disagree",
+   "basis": "6 L-band reads on geometry 077D; the finding holds on 077D but not on 156A; trend -0.0010 RVI/day; 5 peer reads, median 0.421"
+  },
+  "TS-CT-0126": {
+   "rvi": 0.33845134551800327,
+   "geometry": "077D",
+   "trend_per_day": -0.005815695231321635,
+   "peer_median": 0.4481926061219749,
+   "deviation": -0.10974126060397166,
+   "verdict": "inconclusive \u2014 geometries disagree",
+   "basis": "6 L-band reads on geometry 077D; the finding holds on 077D but not on 156A; trend -0.0058 RVI/day; 5 peer reads, median 0.448"
+  }
+ }
+}
