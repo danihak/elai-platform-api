@@ -547,6 +547,61 @@ def cmd_nisar_pull_h5(days: int = 120, farms: int = 2, granules: int = 6) -> int
     return 0
 
 
+def cmd_eval_chatbot() -> int:
+    """Run the golden set against the live agent and report whether it may ship.
+
+    Krupa's 2b question is whether the explanations are actually good AND SAFE.
+    Groundedness alone answers neither: an answer can be perfectly grounded and
+    still tell a lender that a field nobody has seen in forty days is healthy.
+    """
+    from fastapi.testclient import TestClient
+
+    from .main import app
+    from .services.chatbot_eval import Severity, run_suite
+    from .services.golden_set import GOLDEN
+
+    client = TestClient(app)
+
+    def ask(case):
+        body = {"farm_id": case.farm_id, "audience": case.audience}
+        if case.question:
+            body["question"] = case.question
+        r = client.post("/v1/agent/explain", json=body)
+        return r.json() if r.status_code == 200 else {"answer": "", "refused": False}
+
+    print(f"Chatbot evaluation — {len(GOLDEN)} golden cases\n")
+    out = run_suite(GOLDEN, ask)
+
+    for r in out["results"]:
+        mark = "PASS" if r.passed else ("FATAL" if r.fatal else "FAIL")
+        print(f"  {mark:5} {r.case_id}")
+        for f in r.findings:
+            if f.severity != Severity.MINOR:
+                print(f"        {f.severity.value:5} {f.dimension:14} {f.detail}")
+
+    print()
+    print(f"  passed {out['passed']}/{out['n']}  ({out['pass_rate']:.0%})")
+    print(f"  fatal findings on {out['fatal']} case(s)")
+    print(f"  deterministic fallback served {out['fallback_rate']:.0%} of answers")
+    if out["failures_by_dimension"]:
+        print("  failures by dimension: " + ", ".join(
+            f"{k} {v}" for k, v in sorted(out["failures_by_dimension"].items())))
+
+    print()
+    if out["may_ship"]:
+        print("  MAY SHIP on the automated gate.")
+    else:
+        print("  BLOCKED:")
+        for reason in out["blocking_reasons"]:
+            print(f"    {reason}")
+
+    print()
+    print("  Still requires a human before release:")
+    for h in out["human_review_required"]:
+        print(f"    {h}")
+    return 0 if out["may_ship"] else 1
+
+
 def cmd_nisar_season(granules: int = 60) -> int:
     """Full available NISAR season over every farm, then RVI, health and a fit.
 
@@ -844,6 +899,7 @@ def main() -> int:
         "nisar-env": cmd_nisar_env,
         "nisar-pull": cmd_nisar_pull,
         "nisar-pull-h5": cmd_nisar_pull_h5,
+        "eval-chatbot": cmd_eval_chatbot,
         "nisar-season": cmd_nisar_season,
         "nisar-check": cmd_nisar_check,
         "nisar-inspect": cmd_nisar_inspect,

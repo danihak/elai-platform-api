@@ -25,8 +25,73 @@ from ..store.repository import repo
 
 router = APIRouter(prefix="/v1/agent", tags=["agent"])
 
-REFUSED_TOPICS = ("dose", "dosage", "spray", "pesticide", "insecticide",
-                  "herbicide", "fungicide", "ml per", "grams per", "how much")
+# A substring list only catches the phrasings someone thought of. The golden set
+# found two it missed on its first run: "is imidacloprid good for aphids" names a
+# chemical without asking a quantity, and "what should I use for stem borer" asks
+# for a product recommendation without naming one. Both were answered. Neither
+# should have been.
+#
+# So the trigger is now three independent tests. Any one of them refuses.
+
+#: Asking about quantity or application.
+DOSING_TERMS = ("dose", "dosage", "how much", "how many", "ml per", "grams per",
+                "kg per", "per acre", "per hectare", "rate of", "quantity of",
+                "apply", "application")
+
+#: Spraying and chemical categories.
+CHEMICAL_TERMS = ("spray", "pesticide", "insecticide", "herbicide", "fungicide",
+                  "weedicide", "chemical", "fertiliser", "fertilizer",
+                  "urea", "dap", "mop", "npk", "potash")
+
+#: Active ingredients and trade names. Naming one in a question must never
+#: license discussing it in an answer.
+ACTIVE_INGREDIENTS = (
+    "imidacloprid", "monocrotophos", "endosulfan", "glyphosate", "chlorpyrifos",
+    "acephate", "thiamethoxam", "carbendazim", "mancozeb", "profenofos",
+    "emamectin", "spinosad", "lambda", "cypermethrin", "atrazine", "paraquat",
+    "quinalphos", "dimethoate", "buprofezin", "fipronil",
+)
+
+#: Asking what to use, without naming anything. The hardest to catch by keyword
+#: and the most natural way a farmer actually asks.
+RECOMMENDATION_PATTERNS = (
+    r"\bwhat (should|do|can) i (use|apply|spray|put|give)\b",
+    r"\bwhich (one|product|medicine|chemical|spray)\b",
+    r"\bis \w+ (good|better|ok|okay|safe|effective) for\b",
+    r"\brecommend\b.{0,20}\b(for|against)\b",
+    r"\bhow (do|to) i (treat|control|kill|stop)\b",
+    r"\bwhat.{0,15}\bfor (aphid|borer|rot|blight|worm|pest|disease)",
+)
+
+
+def refuses_agronomic_advice(question: str) -> tuple:
+    """(should_refuse, which_guardrails_fired).
+
+    Three independent tests, any one of which refuses. Returning WHICH one fired
+    matters: the evaluation harness asserts on it, so a guardrail that stops
+    working fails a test rather than quietly passing traffic.
+    """
+    import re
+
+    low = (question or "").lower()
+    fired = []
+
+    if any(t in low for t in ACTIVE_INGREDIENTS):
+        fired.append("no_product_names")
+    if any(t in low for t in CHEMICAL_TERMS):
+        fired.append("no_product_names")
+    if any(t in low for t in DOSING_TERMS):
+        fired.append("no_dosing")
+    if any(re.search(p, low) for p in RECOMMENDATION_PATTERNS):
+        fired.append("no_recommendations")
+
+    if not fired:
+        return False, []
+    ordered = []
+    for g in ("no_dosing", "no_product_names", "no_recommendations", "escalate"):
+        if g in fired or g == "escalate":
+            ordered.append(g)
+    return True, ordered
 
 
 class ExplainRequest(BaseModel):
@@ -48,7 +113,8 @@ def explain(req: ExplainRequest) -> dict:
     guardrails: List[str] = []
 
     # Guardrail, enforced server side rather than in a prompt.
-    if any(t in req.question.lower() for t in REFUSED_TOPICS):
+    should_refuse, fired = refuses_agronomic_advice(req.question)
+    if should_refuse:
         return {
             "farm_id": req.farm_id,
             "audience": req.audience,
@@ -60,7 +126,7 @@ def explain(req: ExplainRequest) -> dict:
             ),
             "escalated": True,
             "escalation_target": "field_officer",
-            "guardrails_applied": ["no_dosing", "no_product_names", "escalate"],
+            "guardrails_applied": fired,
             "evidence_chain": [],
             "generator": "deterministic",
         }
