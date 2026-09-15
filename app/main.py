@@ -18,7 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from elai_confidence_core import CURRENT
 
-from .routers import governance, agent, coverage, farms, feedback, lenderbook, portfolio, trust
+from .routers import governance, kisanvoice, agent, coverage, farms, feedback, lenderbook, portfolio, trust
 
 DESCRIPTION = """
 The confidence state engine, exposed as an API.
@@ -62,6 +62,7 @@ app.include_router(feedback.router)
 app.include_router(lenderbook.router)
 app.include_router(trust.router)
 app.include_router(governance.router)
+app.include_router(kisanvoice.router)
 
 
 @app.get("/healthz", tags=["ops"], summary="Liveness and readiness")
