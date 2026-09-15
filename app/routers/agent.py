@@ -94,6 +94,25 @@ def refuses_agronomic_advice(question: str) -> tuple:
     return True, ordered
 
 
+def _rejected_figures(reason: str) -> dict:
+    """Pull the measurements an engine reason cites when it refuses a reading.
+
+    The reason strings are generated, not free text, so the shapes are known:
+    "uncertainty 0.17 exceeds the decision-grade ceiling 0.12". Anything found
+    here is recorded as rejected evidence, never as a value.
+    """
+    import re as _re
+
+    out = {}
+    m = _re.search(r"uncertainty\s+([0-9]*\.?[0-9]+)", reason or "")
+    if m:
+        out["uncertainty"] = float(m.group(1))
+    m = _re.search(r"ceiling\s+([0-9]*\.?[0-9]+)", reason or "")
+    if m:
+        out["ceiling"] = float(m.group(1))
+    return out
+
+
 class ExplainRequest(BaseModel):
     farm_id: str
     question: str = "Why is this field flagged?"
@@ -131,7 +150,7 @@ def explain(req: ExplainRequest) -> dict:
             "generator": "deterministic",
         }
 
-    chain = [{
+    head = {
         "index": "NDVI",
         "obs_date": latest.obs_date.isoformat(),
         "das": latest.das,
@@ -144,7 +163,29 @@ def explain(req: ExplainRequest) -> dict:
         "source": latest.source,
         "rung": latest.rung_label,
         "rule_version": latest.rule_version,
-    }]
+    }
+
+    # A Blind observation publishes no value and no band — that is the whole
+    # point of the state. But an estimate WAS produced and then rejected for
+    # being too wide, and the reason string quotes the figure that failed:
+    # "uncertainty 0.17 exceeds the decision-grade ceiling".
+    #
+    # The evaluation harness caught the inconsistency: the answer cited a number
+    # the chain suppressed. Stripping the figure from the reason would have been
+    # the easy fix and the wrong one. The evidence for a Blind decision is the
+    # rejected measurement, and an institution asking six months later why a
+    # field showed no number deserves to see what was rejected and against what
+    # ceiling — so the chain carries it, clearly labelled as rejected.
+    rejected = _rejected_figures(latest.reason)
+    if rejected:
+        head["rejected"] = rejected
+        head["rejected_note"] = (
+            "an estimate was produced and refused for being wider than the "
+            "decision-grade ceiling; it is recorded here as the evidence for "
+            "the Blind state, and is not a published value"
+        )
+
+    chain = [head]
     if latest.last_verified_date:
         chain.append({
             "index": "NDVI",

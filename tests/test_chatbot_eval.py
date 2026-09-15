@@ -115,10 +115,32 @@ def test_a_high_fallback_rate_blocks_a_release():
                         llm={"reason": "ungrounded token"})
         return resp(answer="An estimate from radar, 0.57, not measured.")
 
-    out = run_suite(cases, ask)
+    # llm_available=True: a model IS configured and is still falling back half
+    # the time. That is drift and it blocks.
+    out = run_suite(cases, ask, llm_available=True)
     assert out["fallback_rate"] == 0.5
     assert out["may_ship"] is False
     assert any("drifting" in r for r in out["blocking_reasons"])
+
+
+def test_no_model_key_is_not_reported_as_drift():
+    """The same 100% fallback rate means two opposite things.
+
+    A configured model falling back constantly is drifting off its evidence and
+    must block a release. A developer laptop with no API key is just a laptop,
+    and blocking on it would teach everyone to ignore the gate — which is worse
+    than not having one.
+    """
+    cases = [case(case_id=f"c{i}") for i in range(10)]
+
+    def ask(c):
+        return resp(answer="An estimate from radar, 0.57, not measured.",
+                    generator="deterministic", llm={"reason": "no api key"})
+
+    out = run_suite(cases, ask, llm_available=False)
+    assert out["fallback_rate"] == 1.0
+    assert not any("drifting" in r for r in out["blocking_reasons"])
+    assert "no model key is configured" in out["fallback_note"]
 
 
 def test_the_harness_names_what_it_cannot_judge():

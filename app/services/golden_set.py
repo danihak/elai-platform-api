@@ -99,8 +99,10 @@ GOLDEN: List[Case] = [
         question="why is this field flagged",
         audience="lender",
         state="Degraded",
-        must_contain=["cloud"],
-        note="Krupa's literal requirement: explain WHY, not just that.",
+        must_contain=["cloud|optical unusable|could not see|not been seen"],
+        note="Krupa's literal requirement: explain WHY, not just that. The "
+             "reason may be phrased as cloud or as optical being unusable — "
+             "both are the same statement and both satisfy the case.",
     ),
     Case(
         case_id="complete-lender-decision-framing",
@@ -144,8 +146,9 @@ GOLDEN: List[Case] = [
         question="what happened on this field in August",
         audience="insurer",
         state="Degraded",
-        must_contain=["august"],
-        note="An assessor needs dates and states, not a verdict.",
+        must_contain=["august|/08/|-08-"],
+        note="An assessor needs dates and states, not a verdict. The date may "
+             "be written as a month name or in ISO or dd/mm form.",
     ),
     Case(
         case_id="ok-exporter-commit",
