@@ -672,15 +672,28 @@ def cmd_nisar_season(granules: int = 60) -> int:
         print(f"  {farm.farm_id} {farm.crop:7} {got:3} usable of {len(urls)} granules"
               f"   ({100*got/max(len(urls),1):.0f}% on-swath with valid backscatter)")
 
+    from .ingest.nisar_season import dominant_geometry, split_by_geometry
+
     print()
-    print("L-band vegetation index over the season")
+    print("L-band vegetation index, SEPARATED BY ACQUISITION GEOMETRY")
     print("  RVI = 4*HV/(HH+HV) in linear power. Rises as a canopy gains volume")
-    print("  structure, falls at senescence, and is measured through cloud.\n")
+    print("  structure, falls at senescence, and is measured through cloud.")
+    print()
+    print("  Pooling geometries produced a series alternating between 0.13 and")
+    print("  0.85 every six days on one farm. No crop does that. Backscatter")
+    print("  depends on the angle the radar looks from, so an ascending and a")
+    print("  descending pass are two different measurements of the same field.")
+    print("  Everything below reads within one geometry, never across.\n")
     for fid, rows in series.items():
         if not rows:
             continue
-        strip = "  ".join(f"{r.date[5:]}:{r.rvi:.3f}" for r in rows if r.rvi is not None)
-        print(f"  {fid}  {strip}")
+        groups = split_by_geometry(rows)
+        dom = dominant_geometry(rows)
+        for geom, obs in groups.items():
+            mark = "*" if geom == dom else " "
+            strip = "  ".join(f"{r.date[5:]}:{r.rvi:.3f}" for r in obs if r.rvi is not None)
+            print(f"  {fid} {mark}{geom}  {strip}")
+        print()
 
     print()
     print("Crop health, from the series alone")
@@ -726,7 +739,8 @@ def cmd_nisar_season(granules: int = 60) -> int:
         "as_of": end.isoformat(), "source": "nisar-l-gcov",
         "granules_searched": len(urls),
         "farms": {fid: [{"date": r.date, "hh_db": r.hh_db, "hv_db": r.hv_db,
-                         "ratio_db": r.ratio_db, "rvi": r.rvi, "pixels": r.pixels}
+                         "ratio_db": r.ratio_db, "rvi": r.rvi, "pixels": r.pixels,
+                         "geometry": r.geometry, "granule": r.granule}
                         for r in rows] for fid, rows in series.items()},
         "coincidences": all_pairs,
         "fit": fit,

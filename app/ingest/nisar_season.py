@@ -59,6 +59,28 @@ def rvi_dual_pol(hh_db: Optional[float], hv_db: Optional[float]) -> Optional[flo
     return max(0.0, min(1.0, 4.0 * hv / denom))
 
 
+def geometry_of(granule: str) -> str:
+    """The acquisition geometry, from the granule name.
+
+    NISAR_L2_PR_GCOV_030_084_A_011_4005_DHDH_A_2026...
+                         ^track ^direction
+
+    WHY THIS EXISTS. Pooling geometries produced a series that alternated
+    between 0.13 and 0.85 every six days on one farm — a six-fold swing that no
+    crop performs. Radar backscatter depends on the angle the sensor looks from,
+    so an ascending pass and a descending pass over the same field on the same
+    day are two different measurements, not two samples of one.
+
+    A series that mixes them is not a time series. It is two time series
+    interleaved, and any trend read off it is an artefact of which direction the
+    satellite happened to fly last.
+    """
+    parts = granule.split("_")
+    if len(parts) < 7:
+        return "unknown"
+    return f"{parts[5]}{parts[6]}"      # e.g. "084A", "077D"
+
+
 @dataclass
 class LBandObservation:
     farm_id: str
@@ -67,6 +89,10 @@ class LBandObservation:
     hv_db: float
     pixels: int
     granule: str
+
+    @property
+    def geometry(self) -> str:
+        return geometry_of(self.granule)
 
     @property
     def ratio_db(self) -> float:
@@ -146,6 +172,26 @@ class HealthReading:
     basis: str
 
 
+def split_by_geometry(series: List[LBandObservation]) -> Dict[str, List[LBandObservation]]:
+    """One series per track and look direction.
+
+    Everything downstream — trends, peer comparison, any future model — operates
+    within a geometry, never across one.
+    """
+    out: Dict[str, List[LBandObservation]] = {}
+    for o in series:
+        out.setdefault(o.geometry, []).append(o)
+    return {k: sorted(v, key=lambda x: x.date) for k, v in sorted(out.items())}
+
+
+def dominant_geometry(series: List[LBandObservation]) -> Optional[str]:
+    """The geometry with the most observations — the one worth reading a trend from."""
+    groups = split_by_geometry(series)
+    if not groups:
+        return None
+    return max(groups, key=lambda k: len(groups[k]))
+
+
 def assess_health(
     farm_id: str,
     series: List[LBandObservation],
@@ -165,7 +211,13 @@ def assess_health(
     direction and peer deviation is what the data supports, and saying so is the
     difference between a measurement and a guess.
     """
-    pts = [(o.date, o.rvi) for o in sorted(series, key=lambda x: x.date) if o.rvi is not None]
+    # Within one geometry only. A trend computed across look directions
+    # measures the satellite's flight path, not the crop.
+    geom = dominant_geometry(series)
+    if geom is None:
+        return None
+    own = split_by_geometry(series).get(geom, [])
+    pts = [(o.date, o.rvi) for o in own if o.rvi is not None]
     if not pts:
         return None
 
@@ -180,13 +232,18 @@ def assess_health(
         if days > 0:
             trend = (recent[-1][1] - recent[0][1]) / days
 
+    # Peers are compared within the SAME geometry too. A farm looked at from
+    # track 084 ascending cannot be compared against one looked at from 077
+    # descending — that difference alone was six times larger than any crop
+    # signal in this data.
     peer_vals: List[float] = []
     for pid, plist in peers.items():
         if pid == farm_id:
             continue
-        near = [o.rvi for o in plist
+        same_geom = [o for o in plist if o.geometry == geom]
+        near = [o.rvi for o in same_geom
                 if o.rvi is not None and o.date
-                and abs((date.fromisoformat(o.date) - date.fromisoformat(latest_date)).days) <= 6]
+                and abs((date.fromisoformat(o.date) - date.fromisoformat(latest_date)).days) <= 8]
         peer_vals.extend(v for v in near if v is not None)
 
     peer_median = None
@@ -207,7 +264,7 @@ def assess_health(
     else:
         verdict = "steady"
 
-    basis_bits = [f"{len(pts)} L-band reads"]
+    basis_bits = [f"{len(pts)} L-band reads on geometry {geom}"]
     if trend is not None:
         basis_bits.append(f"trend {trend:+.4f} RVI/day")
     if peer_median is not None:

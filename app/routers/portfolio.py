@@ -59,6 +59,15 @@ def portfolio(crop: Optional[str] = None, district: Optional[str] = None,
             "days_since_last_clear_optical": latest.days_since_last_clear_optical,
             "last_verified_date": latest.last_verified_date.isoformat() if latest.last_verified_date else None,
             "rung_label": latest.rung_label,
+            # The field supervisor's question is spatial — "where do I go
+            # today" — and it cannot be answered without boundaries. A cluster
+            # of blind farms in two mandals is one trip, not twelve, and that
+            # is only visible on a map.
+            "polygon": [[round(x, 6), round(y, 6)] for x, y in f.polygon],
+            "centroid": [
+                round(sum(x for x, _ in f.polygon) / len(f.polygon), 6),
+                round(sum(y for _, y in f.polygon) / len(f.polygon), 6),
+            ],
             "yield": MetricOut.of(y),
         })
 
