@@ -155,6 +155,20 @@ class FusionEstimator(FittedFromData):
                             for c, v in blob["fusion_calibration"].items()
                             if v.get("validated")}
 
+        # Conformal multipliers, when a calibration exists. These supersede the
+        # mean-ratio inflation: a mean says nothing about how OFTEN the interval
+        # contains the truth, and coverage is the thing being sold.
+        self.CONFORMAL = {}
+        try:
+            from .conformal import from_json
+
+            conf_path = _p.Path(__file__).parent.parent.parent / "data" / "conformal.json"
+            if conf_path.exists():
+                self.CONFORMAL = from_json(
+                    json.loads(conf_path.read_text(encoding="utf-8")))
+        except Exception:  # noqa: BLE001 — absence is a valid state, not an error
+            self.CONFORMAL = {}
+
     def estimate(self, *, crop, stage, sar_vv, sar_vh, source_keys,
                  last_clear_ndvi, days_since_clear, obs_date=None, **_):
         from elai_confidence_core.estimators import Estimate
@@ -190,12 +204,24 @@ class FusionEstimator(FittedFromData):
         if est is None:
             return None
 
-        sigma = inflate_for_calibration(est.sigma, self.CALIBRATION.get(crop, 1.0))
+        # Prefer the conformal multiplier at the display level. It carries a
+        # finite-sample coverage guarantee; the mean-ratio inflation does not.
+        model = self.CONFORMAL.get(crop)
+        conformal_mult = model.multiplier(0.90) if model and model.usable else None
+        if conformal_mult is not None:
+            # Conformal multipliers are calibrated against a 2-sided interval at
+            # the stated level. Divide by the Gaussian z for that level so the
+            # reported figure stays a comparable one-sigma quantity downstream.
+            sigma = est.sigma * conformal_mult / 1.6449
+            basis = f"conformal90 x{conformal_mult}"
+        else:
+            sigma = inflate_for_calibration(est.sigma, self.CALIBRATION.get(crop, 1.0))
+            basis = "calibration-inflated"
 
         return Estimate(
             ndvi=est.ndvi,
             uncertainty=sigma,
-            model_key=f"fusion[{est.dominant} dominant]",
+            model_key=f"fusion[{est.dominant} dominant, {basis}]",
             model_version=self.version,
             sources_used=list(source_keys) + [c.name for c in est.components],
             # Validated for a crop once the fusion itself has been calibrated for

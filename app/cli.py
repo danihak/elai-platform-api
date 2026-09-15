@@ -25,6 +25,7 @@ COEF_FILE = DATA / "coefficients.json"
 HIST_FILE = DATA / "history.json"
 TRAIN_FILE = DATA / "training.json"
 CLIM_FILE = DATA / "climatology.json"
+CONF_FILE = DATA / "conformal.json"
 
 
 def _load_env() -> None:
@@ -249,6 +250,36 @@ def cmd_fit() -> int:
         else:
             print(f"  {crop:8} NOT VALIDATED — {c['reason']}")
 
+    # ---- conformal prediction: turn the measured band into a guarantee ----
+    from .services.conformal import (blocked_split, calibrate, evaluate, to_json)
+    from .services.fusion import fusion_residuals
+
+    decay_map = {c: d.get("decay_per_day", 0.015) for c, d in decay.items()}
+    residuals = fusion_residuals(truth, radar_sigma, clim, decay_map)
+    cal_set, test_set = blocked_split(residuals)
+
+    print()
+    print(f"conformal calibration on {len(cal_set)} points "
+          f"({len(test_set)} held back for coverage testing, split by field)")
+    conformal = calibrate(cal_set)
+    for crop, m in conformal.items():
+        if not m.usable:
+            print(f"  {crop:8} NOT CERTIFIABLE — {m.reason}")
+            continue
+        mults = "  ".join(f"{lvl}:x{v}" for lvl, v in m.multipliers.items())
+        print(f"  {crop:8} n={m.n:4}  {mults}")
+
+    print()
+    print("achieved coverage on fields the calibration never saw")
+    for crop, levels in evaluate(test_set, conformal).items():
+        for lvl, d in levels.items():
+            flag = "OK " if d["holds"] else "LOW"
+            print(f"  {flag} {crop:8} nominal {d['nominal']:.0%}  "
+                  f"PICP {d['picp']:.1%}  width {d['mpiw']:.3f}  n={d['n']}")
+
+    CONF_FILE.write_text(json.dumps(to_json(conformal), indent=1), encoding="utf-8")
+    print(f"\nwrote {CONF_FILE}")
+
     CLIM_FILE.write_text(json.dumps(
         {"climatology": clim, "persistence_decay": decay, "fusion_calibration": calib},
         indent=1), encoding="utf-8")
@@ -347,6 +378,7 @@ def _fusion_truth_points(series_by_field, radar_sigma):
             truth = pts[i][1]
             out.append({
                 "crop": crop,
+                "field_id": field_id,
                 "obs_date": pts[i][0],
                 "ndvi": truth,
                 "radar_ndvi": truth + rng.gauss(0, sigma),

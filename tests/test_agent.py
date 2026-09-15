@@ -164,3 +164,68 @@ def test_groundedness_ignores_digits_inside_identifiers():
     ev = [{"tool": "get_farm_context", "result": {"farm_id": "TS-MZ-0044"}}]
     ok, bad = check_grounded("Farm TS-MZ-0044 was reviewed.", ev)
     assert ok, f"flagged identifier digits: {bad}"
+
+
+# --------------------------------------------------------- conformal prediction
+
+def test_conformal_refuses_to_certify_a_small_calibration_set():
+    """An uncertifiable level must return nothing, not a clamped multiplier.
+
+    Clamping to the largest observed score produces an interval that looks like
+    a guarantee and is not one.
+    """
+    from app.services.conformal import calibrate
+
+    tiny = [{"crop": "maize", "actual": 0.5, "predicted": 0.5, "sigma": 0.05}] * 20
+    models = calibrate(tiny)
+    assert not models["maize"].usable
+    assert "need" in models["maize"].reason
+
+
+def test_calibration_floor_is_derived_not_invented():
+    """The floor must come from where the quantile exists, plus a stated margin.
+
+    A flat round number refused to certify a crop at 49 points while certifying
+    one at 50, with nothing behind the difference. required_n is the actual
+    mathematical requirement; MIN_STABLE is the separately justified margin.
+    """
+    from app.services.conformal import MIN_STABLE, required_n
+    import math
+
+    for level in (0.80, 0.90, 0.95, 0.99):
+        n = required_n(level)
+        assert math.ceil((n + 1) * level) <= n
+        assert math.ceil(n * level) > n - 1
+    assert required_n(0.95) == 19
+    assert required_n(0.99) == 99
+    assert MIN_STABLE >= required_n(0.95)
+
+
+def test_conformal_multiplier_grows_with_the_confidence_level():
+    from app.services.conformal import calibrate
+    import random
+
+    rng = random.Random(1)
+    pts = [{"crop": "maize", "field_id": f"F{i%10}", "actual": 0.5,
+            "predicted": 0.5 + rng.gauss(0, 0.05), "sigma": 0.05}
+           for i in range(300)]
+    m = calibrate(pts)["maize"]
+    assert m.multiplier(0.80) < m.multiplier(0.90) < m.multiplier(0.95)
+
+
+def test_conformal_interval_is_none_for_an_uncalibrated_crop():
+    """Never present an uncertified band in the shape of a certified one."""
+    from app.services.conformal import interval
+    assert interval(0.6, 0.08, None, 0.90) is None
+
+
+def test_blocked_split_keeps_fields_whole():
+    """A random row split leaks correlated neighbours across the boundary."""
+    from app.services.conformal import blocked_split
+
+    pts = [{"crop": "maize", "field_id": f"F{i//20}", "actual": 0.5,
+            "predicted": 0.5, "sigma": 0.05} for i in range(200)]
+    cal, test = blocked_split(pts)
+    cal_fields = {p["field_id"] for p in cal}
+    test_fields = {p["field_id"] for p in test}
+    assert not (cal_fields & test_fields)

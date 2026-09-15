@@ -265,3 +265,43 @@ def inflate_for_calibration(sigma: float, calibration: float) -> float:
     conservative estimator is left conservative.
     """
     return sigma * max(1.0, calibration)
+
+
+def fusion_residuals(
+    truth_points: List[Dict],
+    radar_sigma_by_crop: Dict[str, float],
+    climatology: Dict[str, Dict],
+    decay_by_crop: Dict[str, float],
+) -> List[Dict]:
+    """Per-point held-out residuals, for conformal calibration.
+
+    `validate_fusion` returns aggregate RMSE and a calibration ratio. Conformal
+    prediction needs the individual scores, because the multiplier is a QUANTILE
+    of them rather than a mean — and a mean says nothing about how often the
+    interval actually contains the truth.
+    """
+    out: List[Dict] = []
+    for p in truth_points:
+        crop = p["crop"]
+        comps = build_components(
+            obs_date=p["obs_date"], crop=crop,
+            radar_ndvi=p.get("radar_ndvi"),
+            radar_sigma=radar_sigma_by_crop.get(crop),
+            radar_detail="",
+            last_clear_ndvi=p.get("last_clear_ndvi"),
+            days_since_clear=p.get("days_since_clear", 999),
+            climatology_model=climatology.get(crop),
+            persistence_decay=decay_by_crop.get(crop, 0.015),
+        )
+        est = fuse(comps)
+        if est is None:
+            continue
+        out.append({
+            "crop": crop,
+            "field_id": p.get("field_id", "unknown"),
+            "actual": p["ndvi"],
+            "predicted": est.ndvi,
+            "sigma": est.sigma,
+            "days_since_clear": p.get("days_since_clear"),
+        })
+    return out
